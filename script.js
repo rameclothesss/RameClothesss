@@ -1,5 +1,9 @@
+const SUPABASE_URL = 'https://qrlvbiosynsaqqadjrub.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2vDzHGf-1ZdxdRQUU5so7w_Yz1iTVlE';
+const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // Product Data
-const products = [
+const defaultProducts = [
     { 
         id: 1, 
         name: 'Camisero Animal Print', 
@@ -142,6 +146,12 @@ const products = [
     }
 ];
 
+let products = JSON.parse(localStorage.getItem('rame_products'));
+if (!products || products.length === 0) {
+    products = defaultProducts;
+    localStorage.setItem('rame_products', JSON.stringify(products));
+}
+
 let cart = JSON.parse(localStorage.getItem('rame_cart')) || [];
 
 // UI Elements
@@ -155,6 +165,7 @@ const cartTotalValue = document.getElementById('cart-total-value');
 const cartCount = document.getElementById('cart-count');
 const checkoutBtn = document.getElementById('checkout-btn');
 const searchInput = document.getElementById('search-input');
+const productFiltersContainer = document.querySelector('.product-filters');
 const navbar = document.getElementById('navbar');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const navLinksContainer = document.querySelector('.nav-links');
@@ -344,6 +355,22 @@ function renderProducts(filter = 'all', searchTerm = '') {
     });
 }
 
+function getCategoryLabel(category) {
+    if (!category) return '';
+    return category.charAt(0).toUpperCase() + category.slice(1);
+}
+
+function renderCategoryFilters() {
+    if (!productFiltersContainer) return;
+
+    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+    const staticButtons = [
+        '<button class="filter-btn active" data-filter="all">Todos</button>'
+    ];
+    const dynamicButtons = categories.map((cat) => `<button class="filter-btn" data-filter="${cat}">${getCategoryLabel(cat)}</button>`);
+    productFiltersContainer.innerHTML = [...staticButtons, ...dynamicButtons].join('');
+}
+
 // Carousel Logic
 const sliderPositions = {}; // Store current index for each product slider
 
@@ -470,35 +497,34 @@ closeCart.addEventListener('click', () => toggleCart(false));
 cartOverlay.addEventListener('click', () => toggleCart(false));
 document.getElementById('continue-shopping').addEventListener('click', () => toggleCart(false));
 
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const target = e.currentTarget;
-        document.querySelector('.filter-btn.active').classList.remove('active');
-        target.classList.add('active');
-        
-        const filter = target.dataset.filter;
-        const subFiltersValue = document.getElementById('sub-filters');
-        
-        // Show sub-filters only when "Pijamas" is selected
-        if (filter === 'pijamas') {
-            subFiltersValue.style.display = 'block';
-            setTimeout(() => {
-                subFiltersValue.style.transform = 'translateY(0)';
-                subFiltersValue.style.opacity = '1';
-            }, 10);
-            
-            // Set "Todo" as active sub-filter by default
-            document.querySelectorAll('.sub-filter-btn').forEach(s => s.classList.remove('active'));
-            const defaultSub = document.querySelector('.sub-filter-btn[data-sub="pijamas"]');
-            if(defaultSub) defaultSub.classList.add('active');
-        } else {
-            subFiltersValue.style.transform = 'translateY(-10px)';
-            subFiltersValue.style.opacity = '0';
-            setTimeout(() => subFiltersValue.style.display = 'none', 300);
-        }
-        
-        renderProducts(filter, searchInput.value);
-    });
+productFiltersContainer?.addEventListener('click', (e) => {
+    const target = e.target.closest('.filter-btn');
+    if (!target) return;
+
+    const active = document.querySelector('.filter-btn.active');
+    if (active) active.classList.remove('active');
+    target.classList.add('active');
+
+    const filter = target.dataset.filter;
+    const subFiltersValue = document.getElementById('sub-filters');
+
+    if (filter === 'pijamas') {
+        subFiltersValue.style.display = 'block';
+        setTimeout(() => {
+            subFiltersValue.style.transform = 'translateY(0)';
+            subFiltersValue.style.opacity = '1';
+        }, 10);
+
+        document.querySelectorAll('.sub-filter-btn').forEach(s => s.classList.remove('active'));
+        const defaultSub = document.querySelector('.sub-filter-btn[data-sub="pijamas"]');
+        if (defaultSub) defaultSub.classList.add('active');
+    } else {
+        subFiltersValue.style.transform = 'translateY(-10px)';
+        subFiltersValue.style.opacity = '0';
+        setTimeout(() => subFiltersValue.style.display = 'none', 300);
+    }
+
+    renderProducts(filter, searchInput.value);
 });
 
 // Event Listeners for Sub-filter buttons
@@ -586,8 +612,37 @@ window.addEventListener('load', () => {
     }, 1000); // 1s to enjoy the bow
 });
 
-renderProducts();
-renderCart();
-revealSections(); // Check for visible sections on load
+async function loadProductsFromSupabase() {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
+    if (error) {
+        console.warn('Supabase load error:', error.message);
+        return;
+    }
+    if (!data || !data.length) return;
+
+    products = data.map((row) => ({
+        id: row.id,
+        name: row.name,
+        price: Number(row.price || 0),
+        priceCard: Number(row.price_card || 0),
+        category: row.category || 'general',
+        subCategory: row.sub_category || '',
+        badge: row.badge || '',
+        sizes: row.sizes || ['Unico'],
+        images: row.images || []
+    }));
+    localStorage.setItem('rame_products', JSON.stringify(products));
+}
+
+async function initShop() {
+    await loadProductsFromSupabase();
+    renderCategoryFilters();
+    renderProducts();
+    renderCart();
+    revealSections();
+}
+
+initShop();
 
 console.log('Ramé Shop System ready! 🛍️🎀');

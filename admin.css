@@ -1,0 +1,202 @@
+:root {
+  --color-primary: #ffb7c5;
+  --color-primary-light: #fff0f3;
+  --color-primary-dark: #cc8b98;
+  --color-secondary: #000000;
+  --color-text: #333333;
+  --color-bg: #ffffff;
+  --shadow-soft: 0 10px 30px rgba(255, 183, 197, 0.2);
+  --shadow-strong: 0 15px 40px rgba(0, 0, 0, 0.1);
+  --font-title: 'Playfair Display', serif;
+  --font-body: 'Montserrat', sans-serif;
+  --transition-smooth: all 0.4s ease;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at 85% 10%, #ffe5eb 0%, transparent 36%),
+    radial-gradient(circle at 15% 85%, #ffeef3 0%, transparent 34%),
+    var(--color-bg);
+}
+
+.admin-wrap {
+  width: min(1100px, 94vw);
+  margin: 24px auto 40px;
+  display: grid;
+  gap: 18px;
+}
+
+.admin-header {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #ffe2e9;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 2.9rem);
+  font-family: var(--font-title);
+  color: var(--color-primary-dark);
+}
+
+.admin-header p { margin: 8px 0 12px; }
+
+.back-link {
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.admin-card {
+  background: #fff;
+  border: 1px solid #ffe5ec;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-family: var(--font-title);
+  color: var(--color-primary-dark);
+}
+
+.admin-form { display: grid; gap: 12px; }
+
+.grid-2 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+input, textarea, select, button { font: inherit; }
+
+input, textarea, select {
+  border: 1px solid #f4c8d2;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff8fa;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary-dark);
+  box-shadow: 0 0 0 3px rgba(255, 183, 197, 0.22);
+}
+
+textarea { resize: vertical; }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-primary-dark);
+  transition: var(--transition-smooth);
+}
+
+button:hover { transform: translateY(-1px); background: #b97787; }
+button.ghost { background: #fbe9ee; color: #975766; }
+button.danger { background: #ffe7e7; color: #af3d3d; }
+
+.status { margin: 0; color: #777; font-size: 0.9rem; }
+
+.image-preview {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+}
+
+.preview-item {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #f6d7df;
+}
+
+.preview-item img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+}
+
+.preview-item span {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.product-list { display: grid; gap: 10px; }
+
+.row {
+  border: 1px solid #f4dbe2;
+  border-radius: 14px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.row img {
+  width: 92px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.row h3 { margin: 0 0 6px; font-size: 1rem; }
+.row p { margin: 3px 0; font-size: 0.86rem; }
+
+.row-actions { display: grid; gap: 8px; }
+.row-actions .delete { background: #ffe9e9; color: #ad3b3b; }
+
+@media (max-width: 800px) {
+  .grid-2, .toolbar { grid-template-columns: 1fr; }
+  .row {
+    grid-template-columns: 1fr;
+  }
+  .row img {
+    width: 100%;
+    height: 220px;
+  }
+  .row-actions { grid-template-columns: 1fr 1fr; }
+}
