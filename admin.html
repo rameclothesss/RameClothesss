@@ -32,6 +32,16 @@
         </div>
         <p id="auth-status" class="status">No autenticada.</p>
       </form>
+
+      <form id="change-password-form" class="admin-form auth-form" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;" hidden>
+        <h3 style="margin-bottom: 10px; color: var(--color-primary-dark);">Cambiar Contraseña</h3>
+        <label>Nueva Contraseña
+          <input type="password" id="new-password" required minlength="6" />
+        </label>
+        <div class="actions">
+          <button type="submit" class="ghost">Actualizar Contraseña</button>
+        </div>
+      </form>
     </section>
 
     <section class="admin-card gated-content" id="manager-card" hidden>

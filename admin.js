@@ -19,6 +19,27 @@ const form = document.getElementById('product-form');
 const idInput = document.getElementById('product-id');
 const count = document.getElementById('count');
 const productList = document.getElementById('product-list');
+const SUPABASE_URL = 'https://qrlvbiosynsaqqadjrub.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2vDzHGf-1ZdxdRQUU5so7w_Yz1iTVlE';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const defaultProducts = [
+  { name: 'Camisero Animal Print', price: 42000, priceCard: 46200, category: 'pijamas', subCategory: 'corto', badge: 'Nuevo', sizes: ['S', 'M', 'L', 'XL'], images: ['img/camisero-animalprint/WhatsApp Image 2026-03-29 at 13.12.41.jpeg', 'img/camisero-animalprint/WhatsApp Image 2026-03-29 at 13.12.42 (1).jpeg', 'img/camisero-animalprint/WhatsApp Image 2026-03-29 at 13.12.42 (2).jpeg', 'img/camisero-animalprint/WhatsApp Image 2026-03-29 at 13.12.42.jpeg'] },
+  { name: 'Camisero Negro', price: 42000, priceCard: 46200, category: 'pijamas', subCategory: 'corto', sizes: ['S', 'M', 'L', 'XL'], images: ['img/camisero-negro/3A5EAD30-8E6A-4266-B9AB-0B85A606E9FD (1).JPEG', 'img/camisero-negro/B6796FFD-336C-41D5-A911-ECA3B5C08311.jpg (1).jpeg'] },
+  { name: 'Camisolin Rayado', price: 30000, priceCard: 36000, category: 'pijamas', subCategory: 'corto', badge: 'Tendencia', sizes: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'], images: ['img/camisolin-rayado/camisolin-rayado-1.jpg', 'img/camisolin-rayado/camisolin-rayado-2.jpg', 'img/camisolin-rayado/camisolin-rayado-3.jpg', 'img/camisolin-rayado/camisolin-rayado-4.jpg'] },
+  { name: 'Camisero Rosa', price: 42000, priceCard: 46200, category: 'pijamas', subCategory: 'corto', sizes: ['S', 'M', 'L', 'XL'], images: ['img/camisero-rosa/WhatsApp Image 2026-03-29 at 13.13.01 (1).jpeg', 'img/camisero-rosa/WhatsApp Image 2026-03-29 at 13.13.01 (2).jpeg', 'img/camisero-rosa/WhatsApp Image 2026-03-29 at 13.13.01.jpeg', 'img/camisero-rosa/WhatsApp Image 2026-03-29 at 13.13.02.jpeg'] },
+  { name: 'Conjunto Musculosa Negro', price: 36000, priceCard: 39600, category: 'pijamas', subCategory: 'corto', sizes: ['S', 'M', 'L', 'XL'], images: ['img/conjunto-musculosa-negro/WhatsApp Image 2026-03-26 at 22.25.02 (1).jpeg', 'img/conjunto-musculosa-negro/WhatsApp Image 2026-03-26 at 22.25.02 (2).jpeg', 'img/conjunto-musculosa-negro/WhatsApp Image 2026-03-26 at 22.25.02.jpeg', 'img/conjunto-musculosa-negro/WhatsApp Image 2026-03-26 at 22.25.03.jpeg'] },
+  { name: 'Conjunto Musculosa Rayado', price: 36000, priceCard: 39600, category: 'pijamas', subCategory: 'corto', sizes: ['S', 'M', 'L', 'XL'], images: ['img/conjunto-musculosa-rayado/WhatsApp Image 2026-03-29 at 13.13.41.jpeg', 'img/conjunto-musculosa-rayado/WhatsApp Image 2026-03-29 at 13.13.42 (1).jpeg', 'img/conjunto-musculosa-rayado/WhatsApp Image 2026-03-29 at 13.13.42.jpeg'] },
+  { name: 'Bata Rayada', price: 45000, priceCard: 49500, category: 'batas', sizes: ['Talle Unico'], images: ['img/bata/bata.jpeg', 'img/bata/WhatsApp Image 2026-03-30 at 10.11.03.jpeg'] },
+  { name: 'Conjunto Camisero Rayado', price: 42000, priceCard: 46200, category: 'pijamas', subCategory: 'corto', badge: 'Nuevo', sizes: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'], images: ['img/camisero-rayado/WhatsApp Image 2026-03-30 at 23.13.45.jpeg', 'img/camisero-rayado/WhatsApp Image 2026-03-30 at 23.13.46 (1).jpeg', 'img/camisero-rayado/WhatsApp Image 2026-03-30 at 23.13.46 (2).jpeg', 'img/camisero-rayado/WhatsApp Image 2026-03-30 at 23.13.46.jpeg'] },
+  { name: 'Bata Negra', price: 45000, priceCard: 49500, category: 'batas', sizes: ['Talle Unico'], images: ['img/bata-negra/WhatsApp Image 2026-03-31 at 12.54.32.jpeg', 'img/bata-negra/WhatsApp Image 2026-03-31 at 12.54.33.jpeg'] },
+  { name: 'Bata Rosa', price: 45000, priceCard: 49500, category: 'batas', sizes: ['Talle Unico'], images: ['img/bata-Rosa/WhatsApp Image 2026-03-31 at 12.54.33.jpeg'] }
+];
+
+const form = document.getElementById('product-form');
+const idInput = document.getElementById('product-id');
+const count = document.getElementById('count');
+const productList = document.getElementById('product-list');
 const cancelBtn = document.getElementById('cancel-edit');
 const formTitle = document.getElementById('form-title');
 const saveBtn = document.getElementById('save-btn');
@@ -28,6 +49,8 @@ const authPassword = document.getElementById('auth-password');
 const authStatus = document.getElementById('auth-status');
 const logoutBtn = document.getElementById('logout-btn');
 const managerCard = document.getElementById('manager-card');
+const changePasswordForm = document.getElementById('change-password-form');
+const newPasswordInput = document.getElementById('new-password');
 const listCard = document.getElementById('list-card');
 const imageUpload = document.getElementById('images-upload');
 const imagePreview = document.getElementById('image-preview');
@@ -119,6 +142,7 @@ function setAuthUI(session) {
   logoutBtn.hidden = !loggedIn;
   managerCard.hidden = !loggedIn;
   listCard.hidden = !loggedIn;
+  if (changePasswordForm) changePasswordForm.hidden = !loggedIn;
   document.body.classList.toggle('logged-in', loggedIn);
   authStatus.textContent = loggedIn ? `Autenticada como ${session.user.email}` : 'No autenticada.';
 }
@@ -325,6 +349,20 @@ logoutBtn.addEventListener('click', async () => {
   renderList();
 });
 
+if (changePasswordForm) {
+  changePasswordForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const newPassword = newPasswordInput.value;
+    const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) {
+      alert(`Error al actualizar la contraseña: ${error.message}`);
+    } else {
+      alert('¡Contraseña actualizada con éxito! Ya puedes usarla la próxima vez que inicies sesión.');
+      newPasswordInput.value = '';
+    }
+  });
+}
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -453,15 +491,6 @@ document.getElementById('reset-products').addEventListener('click', async () => 
   const { error: deleteError } = await supabaseClient.from('products').delete().gt('id', 0);
   if (deleteError) {
     alert(`No se pudo limpiar la tabla: ${deleteError.message}`);
-    return;
-  }
-
-  const payload = defaultProducts.map(toDbPayload);
-  const { error: insertError } = await supabaseClient.from('products').insert(payload);
-  if (insertError) {
-    alert(`No se pudo restaurar: ${insertError.message}`);
-    return;
-  }
   const sizes = parseList(fields.sizes.value);
 
   if (!images.length || !sizes.length) {
