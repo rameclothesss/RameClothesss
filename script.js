@@ -146,13 +146,27 @@ const defaultProducts = [
     }
 ];
 
-let products = JSON.parse(localStorage.getItem('rame_products'));
-if (!products || products.length === 0) {
+let products = defaultProducts;
+try {
+    const stored = localStorage.getItem('rame_products');
+    if (stored) {
+        products = JSON.parse(stored);
+        if (!Array.isArray(products) || products.length === 0) products = defaultProducts;
+    }
+} catch (e) {
     products = defaultProducts;
-    localStorage.setItem('rame_products', JSON.stringify(products));
 }
 
-let cart = JSON.parse(localStorage.getItem('rame_cart')) || [];
+let cart = [];
+try {
+    const storedCart = localStorage.getItem('rame_cart');
+    if (storedCart) {
+        cart = JSON.parse(storedCart);
+        if (!Array.isArray(cart)) cart = [];
+    }
+} catch (e) {
+    cart = [];
+}
 
 // UI Elements
 const productsGrid = document.getElementById('products-grid');
@@ -321,12 +335,16 @@ function renderProducts(mainFilter = 'all', subFilter = 'all', searchTerm = '') 
         const card = document.createElement('div');
         card.className = 'product-card';
         
+        // Safety checks for sizes and images
+        const sizesArr = Array.isArray(product.sizes) ? product.sizes : (typeof product.sizes === 'string' ? product.sizes.split(',') : ['Único']);
+        const imagesArr = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? product.images.split(',') : ['img/placeholder.png']);
+
         // Size options
-        const sizeOptions = product.sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+        const sizeOptions = sizesArr.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('');
         
         // Generating dots and slides for carousel
-        const slides = product.images.map(img => `<div class="product-slide"><img src="${img}" alt="${product.name}"></div>`).join('');
-        const dots = product.images.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
+        const slides = imagesArr.map(img => `<div class="product-slide"><img src="${img.trim()}" alt="${product.name}"></div>`).join('');
+        const dots = imagesArr.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
         
         card.innerHTML = `
             ${product.badge ? `<div class="product-badge">${product.badge}</div>` : ''}
@@ -370,13 +388,16 @@ function getCategoryLabel(category) {
 
 function renderCategoryFilters() {
     if (!productFiltersContainer) return;
-
-    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
-    const staticButtons = [
-        `<button class="filter-btn ${activeMainFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>`
-    ];
-    const dynamicButtons = categories.map((cat) => `<button class="filter-btn ${activeMainFilter === cat ? 'active' : ''}" data-filter="${cat}">${getCategoryLabel(cat)}</button>`);
-    productFiltersContainer.innerHTML = [...staticButtons, ...dynamicButtons].join('');
+    
+    // Instead of completely re-rendering and losing the emojis, we just update the active class
+    const buttons = productFiltersContainer.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+        if (btn.dataset.filter === activeMainFilter) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
 }
 
 function renderSubFilters(category) {
@@ -726,7 +747,11 @@ async function loadProductsFromSupabase() {
 }
 
 async function initShop() {
-    await loadProductsFromSupabase();
+    try {
+        await loadProductsFromSupabase();
+    } catch (e) {
+        console.error('Failed to load Supabase', e);
+    }
     activeMainFilter = 'all';
     activeSubFilter = 'all';
     renderCategoryFilters();

@@ -462,6 +462,138 @@ document.getElementById('reset-products').addEventListener('click', async () => 
     alert(`No se pudo restaurar: ${insertError.message}`);
     return;
   }
+  const sizes = parseList(fields.sizes.value);
+
+  if (!images.length || !sizes.length) {
+    alert('Debes cargar al menos una imagen y un talle.');
+    return;
+  }
+
+  const payload = {
+    name: fields.name.value.trim(),
+    price: Number(fields.price.value),
+    priceCard: Number(fields.priceCard.value),
+    category: fields.category.value.trim().toLowerCase(),
+    subCategory: fields.subCategory.value.trim().toLowerCase(),
+    badge: fields.badge.value.trim(),
+    sizes,
+    images
+  };
+
+  if (idInput.value) {
+    const id = Number(idInput.value);
+    const { error } = await supabaseClient.from('products').update(toDbPayload(payload)).eq('id', id);
+    if (error) {
+      alert(`No se pudo actualizar: ${error.message}`);
+      return;
+    }
+  } else {
+    const { error } = await supabaseClient.from('products').insert(toDbPayload(payload));
+    if (error) {
+      alert(`No se pudo crear: ${error.message}`);
+      return;
+    }
+  }
+
+  clearForm();
+  await loadProducts();
+});
+
+productList.addEventListener('click', async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+
+  const action = target.dataset.action;
+  const id = Number(target.dataset.id);
+  if (!action || !id) return;
+
+  const product = products.find((item) => item.id === id);
+  if (!product) return;
+
+  if (action === 'edit') {
+    fillForm(product);
+    return;
+  }
+
+  if (action === 'delete') {
+    const confirmed = window.confirm(`Borrar producto "${product.name}"?`);
+    if (!confirmed) return;
+
+    const { error } = await supabaseClient.from('products').delete().eq('id', id);
+    if (error) {
+      alert(`No se pudo borrar: ${error.message}`);
+      return;
+    }
+
+    if (Number(idInput.value) === id) clearForm();
+    await loadProducts();
+  }
+});
+
+cancelBtn.addEventListener('click', clearForm);
+searchProducts.addEventListener('input', renderList);
+filterCategory.addEventListener('change', renderList);
+sortProducts.addEventListener('change', renderList);
+
+document.getElementById('import-local-products').addEventListener('click', async () => {
+  const local = JSON.parse(localStorage.getItem('rame_products') || '[]');
+  if (!Array.isArray(local) || local.length === 0) {
+    alert('No hay productos guardados en esta pagina para importar.');
+    return;
+  }
+
+  const confirmed = window.confirm(`Se importaran ${local.length} productos desde esta pagina a Supabase. Continuar?`);
+  if (!confirmed) return;
+
+  const normalized = local.map((item) => ({
+    name: String(item.name || '').trim(),
+    price: Number(item.price || 0),
+    priceCard: Number(item.priceCard || 0),
+    category: String(item.category || 'general').trim().toLowerCase(),
+    subCategory: String(item.subCategory || '').trim().toLowerCase(),
+    badge: String(item.badge || '').trim(),
+    sizes: Array.isArray(item.sizes) ? item.sizes : [],
+    images: Array.isArray(item.images) ? item.images.slice(0, 4) : []
+  })).filter((p) => p.name && p.images.length > 0);
+
+  if (normalized.length === 0) {
+    alert('Los productos locales no tienen formato valido para importar.');
+    return;
+  }
+
+  const { error: deleteError } = await supabaseClient.from('products').delete().gt('id', 0);
+  if (deleteError) {
+    alert(`No se pudo limpiar Supabase: ${deleteError.message}`);
+    return;
+  }
+
+  const payload = normalized.map(toDbPayload);
+  const { error: insertError } = await supabaseClient.from('products').insert(payload);
+  if (insertError) {
+    alert(`No se pudo importar: ${insertError.message}`);
+    return;
+  }
+
+  await loadProducts();
+  alert('Importacion completada. Ya puedes editar esos productos en admin.');
+});
+
+document.getElementById('reset-products').addEventListener('click', async () => {
+  const confirmed = window.confirm('Esto reemplaza el catalogo por el inicial. Continuar?');
+  if (!confirmed) return;
+
+  const { error: deleteError } = await supabaseClient.from('products').delete().gt('id', 0);
+  if (deleteError) {
+    alert(`No se pudo limpiar la tabla: ${deleteError.message}`);
+    return;
+  }
+
+  const payload = defaultProducts.map(toDbPayload);
+  const { error: insertError } = await supabaseClient.from('products').insert(payload);
+  if (insertError) {
+    alert(`No se pudo restaurar: ${insertError.message}`);
+    return;
+  }
 
   clearForm();
   await loadProducts();
@@ -469,8 +601,13 @@ document.getElementById('reset-products').addEventListener('click', async () => 
 
 async function init() {
   clearForm();
-  await supabaseClient.auth.signOut();
-  setAuthUI(null);
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    setAuthUI(session);
+    await loadProducts();
+  } else {
+    setAuthUI(null);
+  }
 }
 
 init();
