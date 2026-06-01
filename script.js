@@ -389,15 +389,16 @@ function getCategoryLabel(category) {
 function renderCategoryFilters() {
     if (!productFiltersContainer) return;
     
-    // Instead of completely re-rendering and losing the emojis, we just update the active class
-    const buttons = productFiltersContainer.querySelectorAll('.filter-btn');
-    buttons.forEach(btn => {
-        if (btn.dataset.filter === activeMainFilter) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
+    const categories = [...new Set(products.map(p => p.category))].filter(c => c && c !== 'general' && c !== 'all');
+    
+    let buttonsHtml = `<button class="filter-btn ${activeMainFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>`;
+    
+    categories.forEach(cat => {
+        const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+        buttonsHtml += ` <button class="filter-btn ${activeMainFilter === cat ? 'active' : ''}" data-filter="${cat}">${label} 🎀</button>`;
     });
+
+    productFiltersContainer.innerHTML = buttonsHtml;
 }
 
 function renderSubFilters(category) {

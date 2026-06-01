@@ -49,8 +49,7 @@ const fields = {
 };
 
 let products = [];
-let uploadedImages = [];
-let manualImages = [];
+let selectedImages = [];
 
 function parseList(raw) {
   return raw.split(/[\n,]/).map((entry) => entry.trim()).filter(Boolean);
@@ -58,9 +57,7 @@ function parseList(raw) {
 
 function clearForm() {
   form.reset();
-  uploadedImages = [];
-  manualImages = [];
-  fields.images.value = '';
+  selectedImages = [];
   renderImagePreview();
   idInput.value = '';
   formTitle.textContent = 'Nuevo producto';
@@ -77,9 +74,8 @@ function fillForm(product) {
   fields.subCategory.value = product.subCategory || '';
   fields.badge.value = product.badge || '';
   fields.sizes.value = (product.sizes || []).join(', ');
-  manualImages = (product.images || []).filter((img) => !img.startsWith('data:image')).slice(0, 4);
-  fields.images.value = manualImages.join('\n');
-  uploadedImages = (product.images || []).filter((img) => img.startsWith('data:image')).slice(0, 4 - manualImages.length);
+  selectedImages = (product.images || []).slice(0, 4);
+  syncImagesField();
   renderImagePreview();
   formTitle.textContent = `Editar producto #${product.id}`;
   saveBtn.textContent = 'Guardar cambios';
@@ -125,31 +121,22 @@ function setAuthUI(session) {
 
 function renderImagePreview() {
   imagePreview.innerHTML = '';
-  const allImages = [
-    ...uploadedImages.map((src) => ({ src, source: 'upload' })),
-    ...manualImages.map((src) => ({ src, source: 'manual' }))
-  ].slice(0, 4);
-
-  allImages.forEach((item, index) => {
+  selectedImages.forEach((src, index) => {
     const box = document.createElement('div');
     box.className = 'preview-item';
     box.innerHTML = `
-      <img src="${item.src}" alt="Imagen ${index + 1}" />
+      <img src="${src}" alt="Imagen ${index + 1}" />
       <span>${index + 1}</span>
-      <button type="button" class="remove-image-btn" data-index="${index}">Eliminar</button>
+      <button type="button" class="remove-image-btn" data-index="${index}" style="width: 100%; padding: 8px; background: rgba(220, 53, 69, 0.9); font-size: 0.85rem; font-weight: bold; color: white; border: none; cursor: pointer;">🗑️ Eliminar</button>
     `;
     imagePreview.appendChild(box);
   });
 }
 
-function syncManualImagesFromTextarea() {
-  manualImages = parseList(fields.images.value).slice(0, 4);
-  const maxManualBySlots = Math.max(0, 4 - uploadedImages.length);
-  if (manualImages.length > maxManualBySlots) {
-    manualImages = manualImages.slice(0, maxManualBySlots);
-    fields.images.value = manualImages.join('\n');
-    alert('Maximo 4 imagenes por producto entre subidas y URLs/rutas.');
-  }
+function syncImagesField() {
+  fields.images.value = selectedImages
+    .filter((img) => !img.startsWith('data:image'))
+    .join('\n');
 }
 
 function updateCategorySuggestions() {
@@ -257,11 +244,10 @@ async function compressImage(file) {
 }
 
 imageUpload.addEventListener('change', async () => {
-  syncManualImagesFromTextarea();
   const files = Array.from(imageUpload.files || []);
   if (!files.length) return;
 
-  const allowed = 4 - (uploadedImages.length + manualImages.length);
+  const allowed = 4 - selectedImages.length;
   if (allowed <= 0) {
     alert('Maximo 4 imagenes por producto.');
     imageUpload.value = '';
@@ -271,34 +257,25 @@ imageUpload.addEventListener('change', async () => {
   const toUse = files.slice(0, allowed);
   for (const file of toUse) {
     const compressed = await compressImage(file);
-    uploadedImages.push(compressed);
+    selectedImages.push(compressed);
   }
 
   renderImagePreview();
+  syncImagesField();
   imageUpload.value = '';
-});
-
-fields.images.addEventListener('input', () => {
-  syncManualImagesFromTextarea();
-  renderImagePreview();
 });
 
 imagePreview.addEventListener('click', (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLElement) || !target.classList.contains('remove-image-btn')) return;
+  if (!(target instanceof HTMLElement)) return;
+  if (!target.classList.contains('remove-image-btn')) return;
 
   const index = Number(target.dataset.index);
-  if (Number.isNaN(index)) return;
+  if (Number.isNaN(index) || index < 0 || index >= selectedImages.length) return;
 
-  if (index < uploadedImages.length) {
-    uploadedImages.splice(index, 1);
-  } else {
-    const manualIndex = index - uploadedImages.length;
-    manualImages.splice(manualIndex, 1);
-    fields.images.value = manualImages.join('\n');
-  }
-
+  selectedImages.splice(index, 1);
   renderImagePreview();
+  syncImagesField();
 });
 
 authForm.addEventListener('submit', async (event) => {
@@ -328,140 +305,9 @@ logoutBtn.addEventListener('click', async () => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
 
-  syncManualImagesFromTextarea();
-  const images = [...uploadedImages, ...manualImages].slice(0, 4);
-  const sizes = parseList(fields.sizes.value);
-
-  if (!images.length || !sizes.length) {
-    alert('Debes cargar al menos una imagen y un talle.');
-    return;
-  }
-
-  const payload = {
-    name: fields.name.value.trim(),
-    price: Number(fields.price.value),
-    priceCard: Number(fields.priceCard.value),
-    category: fields.category.value.trim().toLowerCase(),
-    subCategory: fields.subCategory.value.trim().toLowerCase(),
-    badge: fields.badge.value.trim(),
-    sizes,
-    images
-  };
-
-  if (idInput.value) {
-    const id = Number(idInput.value);
-    const { error } = await supabaseClient.from('products').update(toDbPayload(payload)).eq('id', id);
-    if (error) {
-      alert(`No se pudo actualizar: ${error.message}`);
-      return;
-    }
-  } else {
-    const { error } = await supabaseClient.from('products').insert(toDbPayload(payload));
-    if (error) {
-      alert(`No se pudo crear: ${error.message}`);
-      return;
-    }
-  }
-
-  clearForm();
-  await loadProducts();
-});
-
-productList.addEventListener('click', async (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLElement)) return;
-
-  const action = target.dataset.action;
-  const id = Number(target.dataset.id);
-  if (!action || !id) return;
-
-  const product = products.find((item) => item.id === id);
-  if (!product) return;
-
-  if (action === 'edit') {
-    fillForm(product);
-    return;
-  }
-
-  if (action === 'delete') {
-    const confirmed = window.confirm(`Borrar producto "${product.name}"?`);
-    if (!confirmed) return;
-
-    const { error } = await supabaseClient.from('products').delete().eq('id', id);
-    if (error) {
-      alert(`No se pudo borrar: ${error.message}`);
-      return;
-    }
-
-    if (Number(idInput.value) === id) clearForm();
-    await loadProducts();
-  }
-});
-
-cancelBtn.addEventListener('click', clearForm);
-searchProducts.addEventListener('input', renderList);
-filterCategory.addEventListener('change', renderList);
-sortProducts.addEventListener('change', renderList);
-
-document.getElementById('import-local-products').addEventListener('click', async () => {
-  const local = JSON.parse(localStorage.getItem('rame_products') || '[]');
-  if (!Array.isArray(local) || local.length === 0) {
-    alert('No hay productos guardados en esta pagina para importar.');
-    return;
-  }
-
-  const confirmed = window.confirm(`Se importaran ${local.length} productos desde esta pagina a Supabase. Continuar?`);
-  if (!confirmed) return;
-
-  const normalized = local.map((item) => ({
-    name: String(item.name || '').trim(),
-    price: Number(item.price || 0),
-    priceCard: Number(item.priceCard || 0),
-    category: String(item.category || 'general').trim().toLowerCase(),
-    subCategory: String(item.subCategory || '').trim().toLowerCase(),
-    badge: String(item.badge || '').trim(),
-    sizes: Array.isArray(item.sizes) ? item.sizes : [],
-    images: Array.isArray(item.images) ? item.images.slice(0, 4) : []
-  })).filter((p) => p.name && p.images.length > 0);
-
-  if (normalized.length === 0) {
-    alert('Los productos locales no tienen formato valido para importar.');
-    return;
-  }
-
-  const { error: deleteError } = await supabaseClient.from('products').delete().gt('id', 0);
-  if (deleteError) {
-    alert(`No se pudo limpiar Supabase: ${deleteError.message}`);
-    return;
-  }
-
-  const payload = normalized.map(toDbPayload);
-  const { error: insertError } = await supabaseClient.from('products').insert(payload);
-  if (insertError) {
-    alert(`No se pudo importar: ${insertError.message}`);
-    return;
-  }
-
-  await loadProducts();
-  alert('Importacion completada. Ya puedes editar esos productos en admin.');
-});
-
-document.getElementById('reset-products').addEventListener('click', async () => {
-  const confirmed = window.confirm('Esto reemplaza el catalogo por el inicial. Continuar?');
-  if (!confirmed) return;
-
-  const { error: deleteError } = await supabaseClient.from('products').delete().gt('id', 0);
-  if (deleteError) {
-    alert(`No se pudo limpiar la tabla: ${deleteError.message}`);
-    return;
-  }
-
-  const payload = defaultProducts.map(toDbPayload);
-  const { error: insertError } = await supabaseClient.from('products').insert(payload);
-  if (insertError) {
-    alert(`No se pudo restaurar: ${insertError.message}`);
-    return;
-  }
+  const manualImages = parseList(fields.images.value);
+  const dataImages = selectedImages.filter((img) => img.startsWith('data:image'));
+  const images = [...dataImages, ...manualImages].slice(0, 4);
   const sizes = parseList(fields.sizes.value);
 
   if (!images.length || !sizes.length) {
@@ -601,13 +447,8 @@ document.getElementById('reset-products').addEventListener('click', async () => 
 
 async function init() {
   clearForm();
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    setAuthUI(session);
-    await loadProducts();
-  } else {
-    setAuthUI(null);
-  }
+  await supabaseClient.auth.signOut();
+  setAuthUI(null);
 }
 
 init();
