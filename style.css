@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   /* Color Palette */
   --color-primary: #ffb7c5; /* Soft Coquette Pink */
   --color-primary-light: #fff0f3; /* Very Pale Pink */
@@ -305,25 +305,45 @@ section {
       display: none !important;
   }
 
+  .hero {
+      background: var(--color-primary-light);
+  }
+
+  /* Mostrar las 5 imagenes en mosaico pequeno y prolijo */
   .hero-collage {
-      grid-template-columns: repeat(8, 1fr);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
       grid-template-rows: repeat(12, 1fr);
-      opacity: 0.9;
-      gap: 10px;
+      gap: 6px;
+      padding: 8px;
+      opacity: 0.78;
   }
-  .collage-p1 { grid-column: 1 / 5; grid-row: 1 / 5; transform: rotate(-4deg); }
-  .collage-p2 { grid-column: 5 / 9; grid-row: 2 / 6; transform: rotate(3deg); }
-  .collage-p3 { grid-column: 1 / 5; grid-row: 9 / 13; transform: rotate(2deg); }
-  .collage-p4 { grid-column: 5 / 9; grid-row: 8 / 12; transform: rotate(-3deg); }
-  .collage-p5 { display: none; } /* Ocultamos la quinta en celular para dar más respiro */
-  
+
+  .hero-collage img {
+      transform: none !important;
+      border-radius: 12px;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      box-shadow: var(--shadow-soft);
+  }
+
+  .collage-p1 { grid-column: 1 / 3; grid-row: 1 / 5; object-position: center 30%; }
+  .collage-p2 { grid-column: 3 / 5; grid-row: 1 / 5; object-position: center 35%; }
+  .collage-p3 { grid-column: 5 / 7; grid-row: 1 / 5; object-position: center 26%; }
+  .collage-p4 { grid-column: 1 / 4; grid-row: 5 / 9; object-position: center 32%; }
+  .collage-p5 { grid-column: 4 / 7; grid-row: 5 / 9; object-position: center 30%; }
+
   .hero-content {
-    margin: 0 5%;
-    padding: 25px;
-    max-width: 100%;
+    margin: 0 auto;
+    padding: 24px 18px;
+    max-width: 88%;
+    position: relative;
+    z-index: 10;
   }
+
   .hero-content h1 {
-    font-size: 2.2rem;
+    font-size: 2rem;
   }
 }
 
@@ -850,36 +870,36 @@ section {
     border-bottom: 1px solid #f0f0f0;
   }
 
-  /* Improved Hero for Mobile Glass look */
+  /* Hero content glass card - mobile */
   .hero-content {
-      background: rgba(255, 255, 255, 0.45) !important;
-      backdrop-filter: blur(20px) saturate(160%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.3) !important;
-      width: 92% !important;
-      max-width: 92% !important;
+      background: rgba(255, 255, 255, 0.50) !important;
+      backdrop-filter: blur(22px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      width: 86% !important;
+      max-width: 86% !important;
       box-sizing: border-box;
       margin: 0 auto;
-      padding: 30px 20px;
+      padding: 30px 22px;
+      border-radius: 22px !important;
+      box-shadow: 0 8px 32px rgba(255, 183, 197, 0.35) !important;
   }
 
   .hero-content h1 {
-    font-size: 1.8rem !important;
-    letter-spacing: -1px;
-    margin-bottom: 15px;
+    font-size: 1.9rem !important;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
   }
   
   .hero-content p {
-    font-size: 0.9rem !important;
-    line-height: 1.4;
+    font-size: 0.95rem !important;
+    line-height: 1.5;
     max-width: 26ch;
     margin-left: auto;
     margin-right: auto;
     text-align: center;
   }
 
-  .hero-collage {
-      opacity: 0.5;
-  }
 }
 
 /* --- Premium Upgrades --- */
@@ -983,3 +1003,4 @@ section {
     background: var(--color-primary);
     color: white;
 }
+
