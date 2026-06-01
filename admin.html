@@ -11,7 +11,7 @@
 </head>
 <body>
   <main class="admin-wrap">
-    <section class="admin-header">
+    <section class="admin-header gated-content">
       <h1>Rame Admin</h1>
       <p>Gestiona tu catalogo online con el mismo estilo de la tienda.</p>
       <a class="back-link" href="index.html">Volver a la tienda</a>
@@ -34,7 +34,7 @@
       </form>
     </section>
 
-    <section class="admin-card" id="manager-card" hidden>
+    <section class="admin-card gated-content" id="manager-card" hidden>
       <h2 id="form-title">Nuevo producto</h2>
       <form id="product-form" class="admin-form">
         <input type="hidden" id="product-id" />
@@ -84,12 +84,13 @@
         <div class="actions">
           <button type="submit" id="save-btn">Guardar producto</button>
           <button type="button" id="cancel-edit" class="ghost" hidden>Cancelar edicion</button>
+          <button type="button" id="import-local-products" class="ghost">Importar productos guardados en esta pagina</button>
           <button type="button" id="reset-products" class="danger">Restaurar catalogo inicial</button>
         </div>
       </form>
     </section>
 
-    <section class="admin-card" id="list-card" hidden>
+    <section class="admin-card gated-content" id="list-card" hidden>
       <div class="list-head">
         <h2>Productos cargados</h2>
         <span id="count"></span>

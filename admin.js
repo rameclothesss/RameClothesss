@@ -50,6 +50,7 @@ const fields = {
 
 let products = [];
 let uploadedImages = [];
+let manualImages = [];
 
 function parseList(raw) {
   return raw.split(/[\n,]/).map((entry) => entry.trim()).filter(Boolean);
@@ -58,6 +59,8 @@ function parseList(raw) {
 function clearForm() {
   form.reset();
   uploadedImages = [];
+  manualImages = [];
+  fields.images.value = '';
   renderImagePreview();
   idInput.value = '';
   formTitle.textContent = 'Nuevo producto';
@@ -74,8 +77,9 @@ function fillForm(product) {
   fields.subCategory.value = product.subCategory || '';
   fields.badge.value = product.badge || '';
   fields.sizes.value = (product.sizes || []).join(', ');
-  fields.images.value = (product.images || []).filter((img) => !img.startsWith('data:image')).join('\n');
-  uploadedImages = (product.images || []).filter((img) => img.startsWith('data:image')).slice(0, 4);
+  manualImages = (product.images || []).filter((img) => !img.startsWith('data:image')).slice(0, 4);
+  fields.images.value = manualImages.join('\n');
+  uploadedImages = (product.images || []).filter((img) => img.startsWith('data:image')).slice(0, 4 - manualImages.length);
   renderImagePreview();
   formTitle.textContent = `Editar producto #${product.id}`;
   saveBtn.textContent = 'Guardar cambios';
@@ -115,17 +119,37 @@ function setAuthUI(session) {
   logoutBtn.hidden = !loggedIn;
   managerCard.hidden = !loggedIn;
   listCard.hidden = !loggedIn;
+  document.body.classList.toggle('logged-in', loggedIn);
   authStatus.textContent = loggedIn ? `Autenticada como ${session.user.email}` : 'No autenticada.';
 }
 
 function renderImagePreview() {
   imagePreview.innerHTML = '';
-  uploadedImages.forEach((src, index) => {
+  const allImages = [
+    ...uploadedImages.map((src) => ({ src, source: 'upload' })),
+    ...manualImages.map((src) => ({ src, source: 'manual' }))
+  ].slice(0, 4);
+
+  allImages.forEach((item, index) => {
     const box = document.createElement('div');
     box.className = 'preview-item';
-    box.innerHTML = `<img src="${src}" alt="Imagen ${index + 1}" /><span>${index + 1}</span>`;
+    box.innerHTML = `
+      <img src="${item.src}" alt="Imagen ${index + 1}" />
+      <span>${index + 1}</span>
+      <button type="button" class="remove-image-btn" data-index="${index}">Eliminar</button>
+    `;
     imagePreview.appendChild(box);
   });
+}
+
+function syncManualImagesFromTextarea() {
+  manualImages = parseList(fields.images.value).slice(0, 4);
+  const maxManualBySlots = Math.max(0, 4 - uploadedImages.length);
+  if (manualImages.length > maxManualBySlots) {
+    manualImages = manualImages.slice(0, maxManualBySlots);
+    fields.images.value = manualImages.join('\n');
+    alert('Maximo 4 imagenes por producto entre subidas y URLs/rutas.');
+  }
 }
 
 function updateCategorySuggestions() {
@@ -233,10 +257,11 @@ async function compressImage(file) {
 }
 
 imageUpload.addEventListener('change', async () => {
+  syncManualImagesFromTextarea();
   const files = Array.from(imageUpload.files || []);
   if (!files.length) return;
 
-  const allowed = 4 - uploadedImages.length;
+  const allowed = 4 - (uploadedImages.length + manualImages.length);
   if (allowed <= 0) {
     alert('Maximo 4 imagenes por producto.');
     imageUpload.value = '';
@@ -251,6 +276,29 @@ imageUpload.addEventListener('change', async () => {
 
   renderImagePreview();
   imageUpload.value = '';
+});
+
+fields.images.addEventListener('input', () => {
+  syncManualImagesFromTextarea();
+  renderImagePreview();
+});
+
+imagePreview.addEventListener('click', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement) || !target.classList.contains('remove-image-btn')) return;
+
+  const index = Number(target.dataset.index);
+  if (Number.isNaN(index)) return;
+
+  if (index < uploadedImages.length) {
+    uploadedImages.splice(index, 1);
+  } else {
+    const manualIndex = index - uploadedImages.length;
+    manualImages.splice(manualIndex, 1);
+    fields.images.value = manualImages.join('\n');
+  }
+
+  renderImagePreview();
 });
 
 authForm.addEventListener('submit', async (event) => {
@@ -280,7 +328,7 @@ logoutBtn.addEventListener('click', async () => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
 
-  const manualImages = parseList(fields.images.value);
+  syncManualImagesFromTextarea();
   const images = [...uploadedImages, ...manualImages].slice(0, 4);
   const sizes = parseList(fields.sizes.value);
 
@@ -355,6 +403,49 @@ searchProducts.addEventListener('input', renderList);
 filterCategory.addEventListener('change', renderList);
 sortProducts.addEventListener('change', renderList);
 
+document.getElementById('import-local-products').addEventListener('click', async () => {
+  const local = JSON.parse(localStorage.getItem('rame_products') || '[]');
+  if (!Array.isArray(local) || local.length === 0) {
+    alert('No hay productos guardados en esta pagina para importar.');
+    return;
+  }
+
+  const confirmed = window.confirm(`Se importaran ${local.length} productos desde esta pagina a Supabase. Continuar?`);
+  if (!confirmed) return;
+
+  const normalized = local.map((item) => ({
+    name: String(item.name || '').trim(),
+    price: Number(item.price || 0),
+    priceCard: Number(item.priceCard || 0),
+    category: String(item.category || 'general').trim().toLowerCase(),
+    subCategory: String(item.subCategory || '').trim().toLowerCase(),
+    badge: String(item.badge || '').trim(),
+    sizes: Array.isArray(item.sizes) ? item.sizes : [],
+    images: Array.isArray(item.images) ? item.images.slice(0, 4) : []
+  })).filter((p) => p.name && p.images.length > 0);
+
+  if (normalized.length === 0) {
+    alert('Los productos locales no tienen formato valido para importar.');
+    return;
+  }
+
+  const { error: deleteError } = await supabaseClient.from('products').delete().gt('id', 0);
+  if (deleteError) {
+    alert(`No se pudo limpiar Supabase: ${deleteError.message}`);
+    return;
+  }
+
+  const payload = normalized.map(toDbPayload);
+  const { error: insertError } = await supabaseClient.from('products').insert(payload);
+  if (insertError) {
+    alert(`No se pudo importar: ${insertError.message}`);
+    return;
+  }
+
+  await loadProducts();
+  alert('Importacion completada. Ya puedes editar esos productos en admin.');
+});
+
 document.getElementById('reset-products').addEventListener('click', async () => {
   const confirmed = window.confirm('Esto reemplaza el catalogo por el inicial. Continuar?');
   if (!confirmed) return;
@@ -378,11 +469,8 @@ document.getElementById('reset-products').addEventListener('click', async () => 
 
 async function init() {
   clearForm();
-  const { data } = await supabaseClient.auth.getSession();
-  setAuthUI(data.session);
-  if (data.session) {
-    await loadProducts();
-  }
+  await supabaseClient.auth.signOut();
+  setAuthUI(null);
 }
 
 init();

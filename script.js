@@ -166,9 +166,12 @@ const cartCount = document.getElementById('cart-count');
 const checkoutBtn = document.getElementById('checkout-btn');
 const searchInput = document.getElementById('search-input');
 const productFiltersContainer = document.querySelector('.product-filters');
+const subFiltersContainer = document.getElementById('sub-filters');
 const navbar = document.getElementById('navbar');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const navLinksContainer = document.querySelector('.nav-links');
+let activeMainFilter = 'all';
+let activeSubFilter = 'all';
 
 // Special Modals Logic
 function showModal(title, contentHTML) {
@@ -300,12 +303,15 @@ function filterCategory(cat) {
 }
 
 // Initialize Products
-function renderProducts(filter = 'all', searchTerm = '') {
+function renderProducts(mainFilter = 'all', subFilter = 'all', searchTerm = '') {
     productsGrid.innerHTML = '';
     
     let filtered = products;
-    if (filter !== 'all') {
-        filtered = filtered.filter(p => p.category === filter || p.subCategory === filter);
+    if (mainFilter !== 'all') {
+        filtered = filtered.filter((p) => p.category === mainFilter);
+    }
+    if (subFilter !== 'all') {
+        filtered = filtered.filter((p) => p.subCategory === subFilter);
     }
     if (searchTerm) {
         filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -353,6 +359,8 @@ function renderProducts(filter = 'all', searchTerm = '') {
         `;
         productsGrid.appendChild(card);
     });
+
+    setupProductSliderInteractions();
 }
 
 function getCategoryLabel(category) {
@@ -365,14 +373,120 @@ function renderCategoryFilters() {
 
     const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
     const staticButtons = [
-        '<button class="filter-btn active" data-filter="all">Todos</button>'
+        `<button class="filter-btn ${activeMainFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>`
     ];
-    const dynamicButtons = categories.map((cat) => `<button class="filter-btn" data-filter="${cat}">${getCategoryLabel(cat)}</button>`);
+    const dynamicButtons = categories.map((cat) => `<button class="filter-btn ${activeMainFilter === cat ? 'active' : ''}" data-filter="${cat}">${getCategoryLabel(cat)}</button>`);
     productFiltersContainer.innerHTML = [...staticButtons, ...dynamicButtons].join('');
+}
+
+function renderSubFilters(category) {
+    if (!subFiltersContainer) return;
+    if (!category || category === 'all') {
+        subFiltersContainer.style.display = 'none';
+        subFiltersContainer.style.opacity = '0';
+        subFiltersContainer.style.transform = 'translateY(-10px)';
+        subFiltersContainer.innerHTML = '';
+        activeSubFilter = 'all';
+        return;
+    }
+
+    const subcategories = [...new Set(
+        products
+            .filter((p) => p.category === category && p.subCategory)
+            .map((p) => p.subCategory)
+    )];
+
+    if (!subcategories.length) {
+        subFiltersContainer.style.display = 'none';
+        subFiltersContainer.style.opacity = '0';
+        subFiltersContainer.style.transform = 'translateY(-10px)';
+        subFiltersContainer.innerHTML = '';
+        activeSubFilter = 'all';
+        return;
+    }
+
+    if (activeSubFilter !== 'all' && !subcategories.includes(activeSubFilter)) {
+        activeSubFilter = 'all';
+    }
+
+    const buttons = [
+        `<button class="sub-filter-btn ${activeSubFilter === 'all' ? 'active' : ''}" data-sub="all">Todo</button>`,
+        ...subcategories.map((sub) => `<button class="sub-filter-btn ${activeSubFilter === sub ? 'active' : ''}" data-sub="${sub}">${getCategoryLabel(sub)}</button>`)
+    ].join('');
+
+    subFiltersContainer.innerHTML = `
+        <div style="display: flex; justify-content: center; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 0.9rem; color: #888; font-weight: 600;">Subcategoria:</span>
+            ${buttons}
+        </div>
+    `;
+    subFiltersContainer.style.display = 'block';
+    setTimeout(() => {
+        subFiltersContainer.style.transform = 'translateY(0)';
+        subFiltersContainer.style.opacity = '1';
+    }, 10);
+}
+
+function applyFilters() {
+    renderProducts(activeMainFilter, activeSubFilter, searchInput.value);
 }
 
 // Carousel Logic
 const sliderPositions = {}; // Store current index for each product slider
+
+function setupProductSliderInteractions() {
+    const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const sliders = document.querySelectorAll('.product-slider-container');
+
+    sliders.forEach((slider) => {
+        const productId = Number(slider.id.replace('slider-', ''));
+        if (!productId || slider.dataset.interactionsReady === 'true') return;
+
+        // Dots: jump directly to specific image
+        slider.querySelectorAll('.dot').forEach((dot) => {
+            dot.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = Number(dot.dataset.index || 0);
+                sliderPositions[productId] = index;
+                updateSliderUI(productId);
+            });
+        });
+
+        if (isMobile) {
+            let startX = 0;
+            let startY = 0;
+
+            slider.addEventListener('touchstart', (e) => {
+                if (!e.touches.length) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }, { passive: true });
+
+            slider.addEventListener('touchend', (e) => {
+                if (!e.changedTouches.length) return;
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const deltaX = endX - startX;
+                const deltaY = endY - startY;
+
+                // Only react to intentional horizontal swipes
+                if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    moveSlider(productId, deltaX < 0 ? 1 : -1);
+                }
+            }, { passive: true });
+        } else {
+            // Desktop: click left/right side of image area
+            slider.addEventListener('click', (e) => {
+                if (e.target.closest('.nav-btn') || e.target.closest('.dot')) return;
+                const rect = slider.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                moveSlider(productId, clickX < rect.width / 2 ? -1 : 1);
+            });
+        }
+
+        slider.dataset.interactionsReady = 'true';
+    });
+}
 
 function moveSlider(productId, direction) {
     const product = products.find(p => p.id === productId);
@@ -500,48 +614,24 @@ document.getElementById('continue-shopping').addEventListener('click', () => tog
 productFiltersContainer?.addEventListener('click', (e) => {
     const target = e.target.closest('.filter-btn');
     if (!target) return;
-
-    const active = document.querySelector('.filter-btn.active');
-    if (active) active.classList.remove('active');
-    target.classList.add('active');
-
-    const filter = target.dataset.filter;
-    const subFiltersValue = document.getElementById('sub-filters');
-
-    if (filter === 'pijamas') {
-        subFiltersValue.style.display = 'block';
-        setTimeout(() => {
-            subFiltersValue.style.transform = 'translateY(0)';
-            subFiltersValue.style.opacity = '1';
-        }, 10);
-
-        document.querySelectorAll('.sub-filter-btn').forEach(s => s.classList.remove('active'));
-        const defaultSub = document.querySelector('.sub-filter-btn[data-sub="pijamas"]');
-        if (defaultSub) defaultSub.classList.add('active');
-    } else {
-        subFiltersValue.style.transform = 'translateY(-10px)';
-        subFiltersValue.style.opacity = '0';
-        setTimeout(() => subFiltersValue.style.display = 'none', 300);
-    }
-
-    renderProducts(filter, searchInput.value);
+    activeMainFilter = target.dataset.filter;
+    activeSubFilter = 'all';
+    renderCategoryFilters();
+    renderSubFilters(activeMainFilter);
+    applyFilters();
 });
 
-// Event Listeners for Sub-filter buttons
-document.querySelectorAll('.sub-filter-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const target = e.currentTarget;
-        document.querySelector('.sub-filter-btn.active').classList.remove('active');
-        target.classList.add('active');
-        
-        const subFilter = target.dataset.sub;
-        renderProducts(subFilter, searchInput.value);
-    });
+// Event delegation for dynamic sub-filters
+subFiltersContainer?.addEventListener('click', (e) => {
+    const target = e.target.closest('.sub-filter-btn');
+    if (!target) return;
+    activeSubFilter = target.dataset.sub || 'all';
+    renderSubFilters(activeMainFilter);
+    applyFilters();
 });
 
 searchInput.addEventListener('input', (e) => {
-    const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
-    renderProducts(activeFilter, e.target.value);
+    renderProducts(activeMainFilter, activeSubFilter, e.target.value);
 });
 
 window.addEventListener('scroll', () => {
@@ -637,8 +727,11 @@ async function loadProductsFromSupabase() {
 
 async function initShop() {
     await loadProductsFromSupabase();
+    activeMainFilter = 'all';
+    activeSubFilter = 'all';
     renderCategoryFilters();
-    renderProducts();
+    renderSubFilters(activeMainFilter);
+    applyFilters();
     renderCart();
     revealSections();
 }

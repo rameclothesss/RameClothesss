@@ -24,6 +24,21 @@ body {
     var(--color-bg);
 }
 
+body:not(.logged-in) .gated-content {
+  display: none;
+}
+
+body:not(.logged-in) .admin-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body:not(.logged-in) #auth-card {
+  width: min(460px, 94vw);
+}
+
 .admin-wrap {
   width: min(1100px, 94vw);
   margin: 24px auto 40px;
@@ -148,6 +163,25 @@ button.danger { background: #ffe7e7; color: #af3d3d; }
   font-size: 0.75rem;
   border-radius: 999px;
   padding: 2px 7px;
+}
+
+.remove-image-btn {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  line-height: 1;
+  background: rgba(175, 61, 61, 0.92);
+  color: #fff;
+  cursor: pointer;
+}
+
+.remove-image-btn:hover {
+  background: rgba(147, 39, 39, 0.95);
+  transform: none;
 }
 
 .list-head {

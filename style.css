@@ -438,6 +438,8 @@ section {
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
+    touch-action: pan-y;
+    cursor: pointer;
 }
 
 .product-slides {
