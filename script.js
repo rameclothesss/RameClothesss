@@ -1,6 +1,27 @@
 const SUPABASE_URL = 'https://qrlvbiosynsaqqadjrub.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_2vDzHGf-1ZdxdRQUU5so7w_Yz1iTVlE';
-const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function waitForSupabase(timeout = 4000) {
+    if (window.supabase?.createClient) {
+        return Promise.resolve(window.supabase);
+    }
+
+    return new Promise((resolve) => {
+        const startedAt = Date.now();
+        const interval = window.setInterval(() => {
+            if (window.supabase?.createClient) {
+                window.clearInterval(interval);
+                resolve(window.supabase);
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeout) {
+                window.clearInterval(interval);
+                resolve(null);
+            }
+        }, 100);
+    });
+}
 
 // Product Data
 const defaultProducts = [
@@ -186,6 +207,15 @@ const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const navLinksContainer = document.querySelector('.nav-links');
 let activeMainFilter = 'all';
 let activeSubFilter = 'all';
+const productImageObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            primeProductSlider(entry.target);
+            productImageObserver.unobserve(entry.target);
+        });
+    }, { rootMargin: '250px 0px' })
+    : null;
 
 // Special Modals Logic
 function showModal(title, contentHTML) {
@@ -220,7 +250,7 @@ function showModal(title, contentHTML) {
             .care-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-top: 20px; }
             .care-item { padding: 15px; border: 1px solid #eee; border-radius: 15px; transition: var(--transition-smooth); }
             .care-item:hover { border-color: var(--color-primary); box-shadow: var(--shadow-soft); }
-            .care-item i { font-size: 2rem; color: var(--color-primary-dark); margin-bottom: 10px; display: block; }
+            .care-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
             .care-item span { font-size: 0.9rem; color: #666; }
         `;
         document.head.appendChild(style);
@@ -279,27 +309,27 @@ document.querySelector('a[href="#cuidados"]').onclick = (e) => {
         <p style="margin-bottom: 20px; color: #555;">Para que tu prenda Ramé te acompañe por mucho más tiempo, te recomendamos:</p>
         <div class="care-grid">
             <div class="care-item">
-                <i class="fas fa-hands-wash"></i>
+                <span class="care-icon" aria-hidden="true">🫧</span>
                 <span>Lavar a mano o en ciclo delicado</span>
             </div>
             <div class="care-item">
-                <i class="fas fa-temperature-low"></i>
+                <span class="care-icon" aria-hidden="true">❄️</span>
                 <span>Siempre con agua fría</span>
             </div>
             <div class="care-item">
-                <i class="fas fa-soap"></i>
+                <span class="care-icon" aria-hidden="true">🧼</span>
                 <span>Jabón suave</span>
             </div>
             <div class="care-item">
-                <i class="fas fa-vial-slash"></i>
+                <span class="care-icon" aria-hidden="true">🚫</span>
                 <span>Nada de lavandina</span>
             </div>
             <div class="care-item">
-                <i class="fas fa-cloud-sun"></i>
+                <span class="care-icon" aria-hidden="true">🌤️</span>
                 <span>Dejar secar a la sombra</span>
             </div>
             <div class="care-item">
-                <i class="fas fa-tshirt"></i>
+                <span class="care-icon" aria-hidden="true">👚</span>
                 <span>Plancha baja (si hace falta)</span>
             </div>
         </div>
@@ -343,7 +373,17 @@ function renderProducts(mainFilter = 'all', subFilter = 'all', searchTerm = '') 
         const sizeOptions = sizesArr.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('');
         
         // Generating dots and slides for carousel
-        const slides = imagesArr.map(img => `<div class="product-slide"><img src="${img.trim()}" alt="${product.name}"></div>`).join('');
+        const slides = imagesArr.map((img, i) => `
+            <div class="product-slide">
+                <img
+                    data-src="${img.trim()}"
+                    data-index="${i}"
+                    alt="${product.name}"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low">
+            </div>
+        `).join('');
         const dots = imagesArr.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
         
         card.innerHTML = `
@@ -353,8 +393,8 @@ function renderProducts(mainFilter = 'all', subFilter = 'all', searchTerm = '') 
                     ${slides}
                 </div>
                 <div class="slider-nav">
-                    <button class="nav-btn prev" onclick="moveSlider(${product.id}, -1)"><i class="fas fa-chevron-left"></i></button>
-                    <button class="nav-btn next" onclick="moveSlider(${product.id}, 1)"><i class="fas fa-chevron-right"></i></button>
+                    <button class="nav-btn prev" onclick="moveSlider(${product.id}, -1)" aria-label="Foto anterior">&#8249;</button>
+                    <button class="nav-btn next" onclick="moveSlider(${product.id}, 1)" aria-label="Foto siguiente">&#8250;</button>
                 </div>
                 <div class="slider-dots">
                     ${dots}
@@ -376,9 +416,33 @@ function renderProducts(mainFilter = 'all', subFilter = 'all', searchTerm = '') 
             </div>
         `;
         productsGrid.appendChild(card);
+        observeProductSlider(card.querySelector('.product-slider-container'));
     });
 
     setupProductSliderInteractions();
+}
+
+function observeProductSlider(slider) {
+    if (!slider) return;
+    if (!productImageObserver) {
+        primeProductSlider(slider);
+        return;
+    }
+    productImageObserver.observe(slider);
+}
+
+function loadProductSlideImage(slider, index) {
+    if (!slider || index < 0) return;
+    const image = slider.querySelector(`img[data-index="${index}"]`);
+    if (!image || image.dataset.loaded === 'true') return;
+    const source = image.dataset.src;
+    if (!source) return;
+    image.src = source;
+    image.dataset.loaded = 'true';
+}
+
+function primeProductSlider(slider) {
+    loadProductSlideImage(slider, 0);
 }
 
 function getCategoryLabel(category) {
@@ -525,9 +589,16 @@ function moveSlider(productId, direction) {
 
 function updateSliderUI(productId) {
     const slider = document.getElementById(`slider-${productId}`);
+    if (!slider) return;
     const slides = slider.querySelector('.product-slides');
     const dots = slider.querySelectorAll('.dot');
     const index = sliderPositions[productId];
+
+    loadProductSlideImage(slider, index);
+    loadProductSlideImage(slider, index + 1);
+    if (index === 0) {
+        loadProductSlideImage(slider, dots.length - 1);
+    }
     
     slides.style.transform = `translateX(-${index * 100}%)`;
     
@@ -717,15 +788,19 @@ function filterCategory(cat) {
 }
 
 // Init
-window.addEventListener('load', () => {
+window.addEventListener('DOMContentLoaded', () => {
     const preloader = document.getElementById('preloader');
+    // 500ms es suficiente para la animación; menos rebote en mobile (tráfico IG)
     setTimeout(() => {
         preloader.classList.add('hidden');
-    }, 1000); // 1s to enjoy the bow
+    }, 180);
 });
 
 async function loadProductsFromSupabase() {
-    if (!supabaseClient) return;
+    const supabaseLib = await waitForSupabase();
+    if (!supabaseLib?.createClient) return;
+
+    const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
     const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
     if (error) {
         console.warn('Supabase load error:', error.message);
@@ -748,18 +823,20 @@ async function loadProductsFromSupabase() {
 }
 
 async function initShop() {
-    try {
-        await loadProductsFromSupabase();
-    } catch (e) {
-        console.error('Failed to load Supabase', e);
-    }
-    activeMainFilter = 'all';
-    activeSubFilter = 'all';
     renderCategoryFilters();
     renderSubFilters(activeMainFilter);
     applyFilters();
     renderCart();
     revealSections();
+
+    try {
+        await loadProductsFromSupabase();
+    } catch (e) {
+        console.error('Failed to load Supabase', e);
+    }
+    renderCategoryFilters();
+    renderSubFilters(activeMainFilter);
+    applyFilters();
 }
 
 initShop();
