@@ -943,6 +943,96 @@ section {
 
 }
 
+/* iPhone / Safari hero fallback */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    .hero {
+      min-height: 100dvh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .hero-collage {
+      display: block;
+      padding: 0;
+      opacity: 1;
+      position: absolute;
+      inset: 0;
+    }
+
+    .hero-collage img {
+      position: absolute;
+      width: auto;
+      height: auto;
+      max-width: none;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+      filter: saturate(1.05) contrast(1.02);
+      background: transparent;
+    }
+
+    .collage-p1 {
+      top: 108px;
+      left: 14px;
+      width: 42%;
+      height: 17%;
+      transform: rotate(-5deg) !important;
+      z-index: 3;
+    }
+
+    .collage-p2 {
+      top: 108px;
+      right: 14px;
+      width: 42%;
+      height: 17%;
+      transform: rotate(4deg) !important;
+      z-index: 3;
+    }
+
+    .collage-p3 {
+      bottom: 112px;
+      left: 24px;
+      width: 40%;
+      height: 19%;
+      transform: rotate(3deg) !important;
+      z-index: 3;
+    }
+
+    .collage-p4 {
+      bottom: 108px;
+      right: 20px;
+      width: 42%;
+      height: 19%;
+      transform: rotate(-4deg) !important;
+      z-index: 3;
+    }
+
+    .collage-p5 {
+      top: 31%;
+      left: 50%;
+      width: 50%;
+      height: 21%;
+      opacity: 0.16;
+      transform: translateX(-50%) rotate(-2deg) !important;
+      z-index: 1;
+    }
+
+    .hero-content {
+      top: 0;
+      margin-top: 22px;
+      width: min(84%, 330px) !important;
+      max-width: 330px !important;
+      padding: 26px 18px !important;
+      background: rgba(255, 255, 255, 0.78) !important;
+      backdrop-filter: blur(10px) saturate(140%) !important;
+      -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
+      box-shadow: 0 10px 30px rgba(255, 183, 197, 0.22) !important;
+      border-radius: 22px !important;
+    }
+  }
+}
+
 /* --- Premium Upgrades --- */
 
 /* Preloader Screen */
