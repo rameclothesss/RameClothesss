@@ -953,82 +953,76 @@ section {
     }
 
     .hero-collage {
-      display: block;
-      padding: 0;
-      opacity: 1;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: 96px 112px minmax(0, 1fr) 124px 132px;
+      gap: 10px;
+      padding: 88px 14px 24px;
+      opacity: 0.96;
       position: absolute;
       inset: 0;
+      pointer-events: none;
+      z-index: 2;
     }
 
     .hero-collage img {
-      position: absolute;
-      width: auto;
-      height: auto;
-      max-width: none;
+      position: relative;
+      width: 100%;
+      height: 100%;
       border-radius: 14px;
       object-fit: cover;
+      object-position: center;
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
       filter: saturate(1.05) contrast(1.02);
       background: transparent;
+      padding: 0;
+      animation: none;
     }
 
     .collage-p1 {
-      top: 108px;
-      left: 14px;
-      width: 42%;
-      height: 17%;
+      grid-column: 1 / 6;
+      grid-row: 1 / 3;
       transform: rotate(-5deg) !important;
       z-index: 3;
     }
 
     .collage-p2 {
-      top: 108px;
-      right: 14px;
-      width: 42%;
-      height: 17%;
+      grid-column: 8 / 13;
+      grid-row: 1 / 3;
       transform: rotate(4deg) !important;
       z-index: 3;
     }
 
     .collage-p3 {
-      bottom: 112px;
-      left: 24px;
-      width: 40%;
-      height: 19%;
+      grid-column: 1 / 6;
+      grid-row: 4 / 6;
       transform: rotate(3deg) !important;
       z-index: 3;
     }
 
     .collage-p4 {
-      bottom: 108px;
-      right: 20px;
-      width: 42%;
-      height: 19%;
+      grid-column: 8 / 13;
+      grid-row: 4 / 6;
       transform: rotate(-4deg) !important;
       z-index: 3;
     }
 
     .collage-p5 {
-      top: 31%;
-      left: 50%;
-      width: 50%;
-      height: 21%;
-      opacity: 0.16;
-      transform: translateX(-50%) rotate(-2deg) !important;
-      z-index: 1;
+      display: none;
     }
 
     .hero-content {
       top: 0;
-      margin-top: 22px;
+      margin-top: 0;
       width: min(84%, 330px) !important;
       max-width: 330px !important;
       padding: 26px 18px !important;
       background: rgba(255, 255, 255, 0.78) !important;
-      backdrop-filter: blur(10px) saturate(140%) !important;
-      -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
+      backdrop-filter: blur(8px) saturate(135%) !important;
+      -webkit-backdrop-filter: blur(8px) saturate(135%) !important;
       box-shadow: 0 10px 30px rgba(255, 183, 197, 0.22) !important;
       border-radius: 22px !important;
+      transform: none !important;
     }
   }
 }
