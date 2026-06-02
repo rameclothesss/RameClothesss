@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramé Clothes | Pijamas y Loungewear Coquette 🎀</title>
+    <meta name="description"
+        content="Descubre la colección más tierna y elegante de pijamas, lencería y loungewear de Rame clothes. Diseño coquette, romántico y cómodo.">
+
+    <!-- Open Graph / Preview al compartir en Instagram y WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Ramé Clothes | Pijamas y Loungewear Coquette 🎀">
+    <meta property="og:description" content="Sentite linda incluso cuando nadie te ve ✨ Pijamas, batas y loungewear con diseño coquette. Enviamos a todo el país.">
+    <meta property="og:image" content="https://rame-clothes.vercel.app/rame_hero_pajama_1774830571481.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://rame-clothes.vercel.app/">
+    <meta property="og:site_name" content="Ramé Clothes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ramé Clothes | Pijamas y Loungewear Coquette">
+    <meta name="twitter:description" content="Sentite linda incluso cuando nadie te ve ✨ Pijamas, batas y loungewear con diseño coquette.">
+    <meta name="twitter:image" content="https://rame-clothes.vercel.app/rame_hero_pajama_1774830571481.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2026-06-02-2">
+    <!-- Scripts diferidos: no bloquean el render inicial de la página -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <!-- Preloader Screen -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-bow">🎀</div>
+        <div class="preloader-text">Ramé</div>
+    </div>
+
+
+    <!-- Header / Navbar -->
+    <header class="navbar" id="navbar">
+        <div class="logo">
+            <img src="img/logo/logo.jpeg" alt="Ramé Clothes" style="height: 40px; vertical-align: middle;">
+            <span>Ramé Clothes</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#inicio">Inicio</a>
+            <a href="#productos">Catálogo</a>
+            <a href="#talles">Talles</a>
+            <a href="#cuidados">Cuidados</a>
+            <a href="https://wa.me/5491130068804" target="_blank" class="btn">WhatsApp</a>
+        </nav>
+        <div class="mobile-menu-btn" id="mobile-menu-btn">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+            </svg>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="inicio">
+        <img src="fondo/iphone-hero.jpg" alt="Rame hero iPhone" class="hero-iphone-bg" decoding="async" onerror="this.onerror=null;this.src='fondo/WhatsApp Image 2026-06-01 at 13.17.17.jpeg';">
+        <div class="hero-collage">
+            <!-- p1 y p2: prioridad alta, primeras visibles en desktop y mobile -->
+            <img src="fondo/WhatsApp Image 2026-06-01 at 13.17.16.jpeg" alt="Ramé Collection 1"
+                class="collage-p1" fetchpriority="high" decoding="async">
+            <img src="fondo/WhatsApp Image 2026-06-01 at 13.17.17.jpeg" alt="Ramé Collection 2"
+                class="collage-p2" fetchpriority="high" decoding="async">
+            <!-- resto: lazy loading, no son críticas al abrir -->
+            <img src="fondo/WhatsApp Image 2026-06-01 at 13.17.16 (1).jpeg" alt="Ramé Collection 3"
+                class="collage-p3" loading="lazy" decoding="async">
+            <img src="fondo/WhatsApp Image 2026-06-01 at 13.17.17 (1).jpeg" alt="Ramé Collection 4"
+                class="collage-p4" loading="lazy" decoding="async">
+            <img src="fondo/WhatsApp Image 2026-06-01 at 13.17.17 (2).jpeg" alt="Ramé Collection 5"
+                class="collage-p5" loading="lazy" decoding="async">
+        </div>
+        <div class="hero-content">
+            <h1>Ramé Clothes</h1>
+            <p>💗✨Sentite linda incluso cuando nadie te ve✨💗</p>
+            <a href="#productos" class="btn btn-premium-shimmer">Ver Catálogo</a>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="container reveal" id="categorias">
+        <h2 style="text-align: center; font-size: 3rem; margin-bottom: 45px; color: var(--color-primary-dark);">Nuestra Colección ✨</h2>
+        <div class="categories-grid">
+            <div class="category-card" onclick="filterCategory('all')">
+                <img src="img/camisero-negro/B6796FFD-336C-41D5-A911-ECA3B5C08311.jpg (1).jpeg" alt="Ver Todo" loading="lazy" decoding="async">
+                <div class="category-info">
+                    <h3>Ver Todo</h3>
+                    <p>Explora el catálogo</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="filterCategory('pijamas')">
+                <img src="img/camisero-rosa/WhatsApp Image 2026-03-29 at 13.13.01.jpeg" alt="Pijamas" loading="lazy" decoding="async">
+                <div class="category-info">
+                    <h3>Pijamas</h3>
+                    <p>Comodidad total</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="filterCategory('batas')">
+                <img src="img/bata/bata.jpeg" alt="Batas" loading="lazy" decoding="async">
+                <div class="category-info">
+                    <h3>Batas</h3>
+                    <p>Suavidad premium</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="container reveal" id="productos">
+        <h2 style="text-align: center; font-size: 3.5rem; margin-bottom: 25px; color: var(--color-primary-dark);">Tu Catálogo 🎀</h2>
+
+        <!-- Search and Filters -->
+        <div class="search-container" style="max-width: 600px; margin: 0 auto 30px; position: relative;">
+            <input type="text" id="search-input" placeholder="Buscar pijama, bata..."
+                style="width: 100%; padding: 15px 50px 15px 20px; border-radius: 30px; border: 1px solid #ddd; outline: none; font-size: 1rem; box-shadow: var(--shadow-soft);">
+            <div style="position: absolute; right: 20px; top: 18px; color: var(--color-primary-dark); width: 20px;">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="product-filters" style="text-align: center; margin-bottom: 20px;">
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="pijamas">Pijamas 🎀</button>
+            <button class="filter-btn" data-filter="batas">Batas ✨</button>
+        </div>
+
+        <!-- Sub Filters for Pijamas -->
+        <div class="sub-filters" id="sub-filters" style="text-align: center; margin-bottom: 40px; display: none; transform: translateY(-10px); transition: var(--transition-smooth);">
+            <div style="display: flex; justify-content: center; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 0.9rem; color: #888; font-weight: 600;">Estilo:</span>
+                <button class="sub-filter-btn active" data-sub="pijamas">Todo</button>
+                <button class="sub-filter-btn" data-sub="corto">Cortos</button>
+                <button class="sub-filter-btn" data-sub="largo">Largos</button>
+            </div>
+        </div>
+
+        <div class="products-grid" id="products-grid">
+            <!-- Products will be injected by JS -->
+        </div>
+    </section>
+
+    <!-- Shopping Cart Sidebar -->
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3>Tu Carrito 🛍️</h3>
+            <span class="close-cart" id="close-cart">&times;</span>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <!-- Cart items injected by JS -->
+        </div>
+        <div class="cart-footer">
+            <button class="btn btn-outline btn-full" id="continue-shopping" style="margin-bottom: 15px;">Seguir Comprando 🛍️</button>
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-value">$0.00</span>
+            </div>
+            <button class="btn btn-full btn-premium-shimmer" id="checkout-btn">Finalizar por WhatsApp 🎀</button>
+        </div>
+    </div>
+    <div class="cart-overlay" id="cart-overlay"></div>
+
+    <!-- Floating Cart Icon -->
+    <div class="cart-floating-icon" id="cart-floating-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="white">
+            <path
+                d="M17.21 9l-4.38-6.56c-.19-.28-.51-.42-.83-.42-.32 0-.64.14-.83.43L6.79 9H2c-.55 0-1 .45-1 1 0 .09.01.18.04.27l2.54 9.27c.23.84 1 1.46 1.92 1.46h13c.92 0 1.69-.62 1.93-1.46l2.54-9.27L23 10c0-.55-.45-1-1-1h-4.79zM9 9l3-4.4L15 9H9zm3 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+    </div>
+
+    <!-- About Section -->
+    <section class="container reveal" id="nosotros" style="display: flex; align-items: center; gap: 40px; flex-wrap: wrap; padding: 100px 5%; overflow: hidden;">
+        <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; padding: 20px;">
+            <div style="position: relative; max-width: 500px; width: 100%;">
+                <img src="img/logo/logo para abajo de la pagina .jpeg" alt="Ramé Clothes" class="about-image-premium" loading="lazy" style="width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; border-radius: 30px; box-shadow: var(--shadow-strong); border: 8px solid white;">
+                <!-- Decorative bow - moved slightly inside to avoid overflow -->
+                <div style="position: absolute; top: -10px; right: -10px; font-size: 3rem; transform: rotate(15deg); filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); z-index: 2;">🎀</div>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 320px;">
+            <h2 style="font-size: 2.8rem; margin-bottom: 20px; color: var(--color-primary-dark);">Ramé Clothes 💗</h2>
+            <p style="margin-top: 15px; font-size: 1.1rem; color: #555; line-height: 1.6;">
+                <strong>Ramé</strong> es algo que es a la vez caótico y hermoso. Nuestra marca nace de esa dualidad: el caos de la vida diaria y la belleza de encontrar un momento para ti, sentirte cómoda y lucir espectacular.
+            </p>
+            <p style="margin-top: 15px; font-size: 1.1rem; color: #555; line-height: 1.6;">
+                Enfocamos cada detalle, desde el primer boceto hasta el último moño, para que cada prenda cuente una historia de feminidad y suavidad con el toque único de <strong>Ramé Clothes</strong>.
+            </p>
+            <a href="https://www.instagram.com/rame.clothesss/" target="_blank" class="btn btn-premium-shimmer" style="margin-top: 25px; padding: 15px 40px;">Seguinos en Instagram &rarr;</a>
+        </div>
+    </section>
+
+
+
+    <!-- Footer -->
+    <footer style="padding: 60px 0; text-align: center; background-color: white; border-top: 1px solid #eee;">
+        <h3 style="margin-bottom: 30px; font-family: var(--font-title); color: var(--color-primary-dark);">Contacto:
+        </h3>
+        <div class="social-links"
+            style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-bottom: 30px;">
+            <a href="https://www.instagram.com/rame.clothesss/" target="_blank">
+                <img src="img/logo/intagramlogololipop.png" alt="Instagram"
+                    style="height: 60px; transition: var(--transition-smooth);"
+                    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            </a>
+            <a href="https://wa.me/5491130068804" target="_blank">
+                <img src="img/logo/whtsaplolipop.png" alt="WhatsApp"
+                    style="height: 60px; transition: var(--transition-smooth);"
+                    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            </a>
+        </div>
+        <p style="color: #999; font-size: 0.9rem;">© 2026 Ramé Clothes. Todos los derechos reservados.</p>
+        <p style="color: #bbb; font-size: 0.8rem; margin-top: 5px;">Hecho por Click24web</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
