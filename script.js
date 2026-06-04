@@ -465,6 +465,14 @@ function getCategoryLabel(category) {
     return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
+function getFixedSubcategories(category) {
+    const fixedSubcategories = {
+        pijamas: ['corto', 'largo']
+    };
+
+    return fixedSubcategories[category] || null;
+}
+
 function renderCategoryFilters() {
     if (!productFiltersContainer) return;
     
@@ -493,11 +501,12 @@ function renderSubFilters(category) {
         return;
     }
 
-    const subcategories = [...new Set(
+    const dynamicSubcategories = [...new Set(
         products
             .filter((p) => p.category === category && p.subCategory)
             .map((p) => p.subCategory)
     )];
+    const subcategories = getFixedSubcategories(category) || dynamicSubcategories;
 
     if (!subcategories.length) {
         subFiltersContainer.style.display = 'block';
@@ -516,7 +525,10 @@ function renderSubFilters(category) {
 
     const buttons = [
         `<button class="sub-filter-btn ${activeSubFilter === 'all' ? 'active' : ''}" data-sub="all">Todo</button>`,
-        ...subcategories.map((sub) => `<button class="sub-filter-btn ${activeSubFilter === sub ? 'active' : ''}" data-sub="${sub}">${getCategoryLabel(sub)}</button>`)
+        ...subcategories.map((sub) => {
+            const hasProducts = dynamicSubcategories.includes(sub);
+            return `<button class="sub-filter-btn ${activeSubFilter === sub ? 'active' : ''}" data-sub="${sub}" ${hasProducts ? '' : 'data-empty="true"'}>${getCategoryLabel(sub)}</button>`;
+        })
     ].join('');
 
     subFiltersContainer.innerHTML = `
@@ -800,6 +812,7 @@ productFiltersContainer?.addEventListener('click', (e) => {
 subFiltersContainer?.addEventListener('click', (e) => {
     const target = e.target.closest('.sub-filter-btn');
     if (!target) return;
+    if (target.dataset.empty === 'true') return;
     activeSubFilter = target.dataset.sub || 'all';
     renderSubFilters(activeMainFilter);
     applyFilters();
