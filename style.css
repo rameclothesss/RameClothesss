@@ -1034,4 +1034,12 @@ section {
     background: var(--color-primary);
     color: white;
 }
+.sub-filter-btn[data-empty="true"] {
+    opacity: 0.55;
+    cursor: default;
+}
+.sub-filter-btn[data-empty="true"]:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
 
