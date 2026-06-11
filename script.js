@@ -948,4 +948,13 @@ window.addEventListener('pageshow', (event) => {
     syncShopView({ resetSliders: true });
 });
 
+// Theme Toggle Logic
+const themeToggleBtn = document.getElementById('theme-toggle');
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+}
+
 console.log('Ramé Shop System ready! 🛍️🎀');
