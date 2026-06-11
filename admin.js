@@ -29,6 +29,7 @@ const authStatus = document.getElementById('auth-status');
 const logoutBtn = document.getElementById('logout-btn');
 const managerCard = document.getElementById('manager-card');
 const listCard = document.getElementById('list-card');
+const statsCard = document.getElementById('stats-card');
 const imageUpload = document.getElementById('images-upload');
 const imagePreview = document.getElementById('image-preview');
 const searchProducts = document.getElementById('search-products');
@@ -110,13 +111,45 @@ function toDbPayload(product) {
   };
 }
 
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  
+  if (tabName === 'stats') {
+    if (statsCard) statsCard.hidden = false;
+    managerCard.hidden = true;
+    listCard.hidden = true;
+  } else {
+    if (statsCard) statsCard.hidden = true;
+    managerCard.hidden = false;
+    listCard.hidden = false;
+  }
+}
+
+document.getElementById('admin-tabs')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) {
+    switchTab(btn.dataset.tab);
+  }
+});
+
 function setAuthUI(session) {
   const loggedIn = !!session;
   logoutBtn.hidden = !loggedIn;
-  managerCard.hidden = !loggedIn;
-  listCard.hidden = !loggedIn;
   document.body.classList.toggle('logged-in', loggedIn);
   authStatus.textContent = loggedIn ? `Autenticada como ${session.user.email}` : 'No autenticada.';
+  
+  const adminTabs = document.getElementById('admin-tabs');
+  if (adminTabs) adminTabs.hidden = !loggedIn;
+
+  if (loggedIn) {
+    switchTab('stats');
+  } else {
+    managerCard.hidden = true;
+    listCard.hidden = true;
+    if (statsCard) statsCard.hidden = true;
+  }
 }
 
 function renderImagePreview() {
@@ -204,6 +237,113 @@ function renderList() {
   });
 }
 
+function updateDashboardStats() {
+  const totalProducts = products.length;
+  const statTotalProducts = document.getElementById('stat-total-products');
+  if (statTotalProducts) statTotalProducts.textContent = totalProducts;
+
+  // Categories
+  const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+  const statTotalCategories = document.getElementById('stat-total-categories');
+  if (statTotalCategories) statTotalCategories.textContent = categories.length;
+
+  // Average Prices
+  const statAvgPrice = document.getElementById('stat-avg-price');
+  const statAvgCardPrice = document.getElementById('stat-avg-card-price');
+  if (statAvgPrice && statAvgCardPrice) {
+    if (totalProducts > 0) {
+      const sumPrice = products.reduce((sum, p) => sum + (p.price || 0), 0);
+      const sumPriceCard = products.reduce((sum, p) => sum + (p.priceCard || 0), 0);
+      const avgPrice = Math.round(sumPrice / totalProducts);
+      const avgPriceCard = Math.round(sumPriceCard / totalProducts);
+      statAvgPrice.textContent = `$${avgPrice.toLocaleString()}`;
+      statAvgCardPrice.textContent = `$${avgPriceCard.toLocaleString()}`;
+    } else {
+      statAvgPrice.textContent = '$0';
+      statAvgCardPrice.textContent = '$0';
+    }
+  }
+
+  // Min / Max Price
+  const statMaxPriceName = document.getElementById('stat-max-price-name');
+  const statMinPriceName = document.getElementById('stat-min-price-name');
+  if (statMaxPriceName && statMinPriceName) {
+    if (totalProducts > 0) {
+      const sortedByPrice = [...products].sort((a, b) => a.price - b.price);
+      const minProduct = sortedByPrice[0];
+      const maxProduct = sortedByPrice[sortedByPrice.length - 1];
+      statMaxPriceName.textContent = `${maxProduct.name} ($${maxProduct.price.toLocaleString()})`;
+      statMinPriceName.textContent = `${minProduct.name} ($${minProduct.price.toLocaleString()})`;
+    } else {
+      statMaxPriceName.textContent = '-';
+      statMinPriceName.textContent = '-';
+    }
+  }
+
+  // Common sizes & badges count
+  const sizeCounts = {};
+  let badgesCount = 0;
+  products.forEach(p => {
+    if (p.badge) badgesCount++;
+    if (Array.isArray(p.sizes)) {
+      p.sizes.forEach(s => {
+        const trimmed = s.trim().toUpperCase();
+        if (trimmed) {
+          sizeCounts[trimmed] = (sizeCounts[trimmed] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  const statCommonSize = document.getElementById('stat-common-size');
+  if (statCommonSize) {
+    let commonSize = '-';
+    let maxCount = 0;
+    for (const [sz, cnt] of Object.entries(sizeCounts)) {
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        commonSize = `${sz} (${cnt} prod)`;
+      }
+    }
+    statCommonSize.textContent = commonSize;
+  }
+
+  const statBadgesCount = document.getElementById('stat-badges-count');
+  if (statBadgesCount) statBadgesCount.textContent = badgesCount;
+
+  // Category Distribution Progress Bars
+  const categoryDistContainer = document.getElementById('category-distribution-list');
+  if (categoryDistContainer) {
+    categoryDistContainer.innerHTML = '';
+    const catCounts = {};
+    products.forEach(p => {
+      if (p.category) {
+        const cat = p.category.trim().toLowerCase();
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+      }
+    });
+
+    const sortedCats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+    sortedCats.forEach(([catName, cnt]) => {
+      const percentage = totalProducts > 0 ? Math.round((cnt / totalProducts) * 100) : 0;
+      const capitalized = catName.charAt(0).toUpperCase() + catName.slice(1);
+      
+      const item = document.createElement('div');
+      item.className = 'chart-row-item';
+      item.innerHTML = `
+        <div class="chart-row-label-row">
+          <span>${capitalized}</span>
+          <span>${cnt} (${percentage}%)</span>
+        </div>
+        <div class="chart-bar-container">
+          <div class="chart-bar-fill" style="width: ${percentage}%"></div>
+        </div>
+      `;
+      categoryDistContainer.appendChild(item);
+    });
+  }
+}
+
 async function loadProducts() {
   const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
   if (error) {
@@ -213,6 +353,7 @@ async function loadProducts() {
   products = (data || []).map(mapRowToProduct);
   updateCategorySuggestions();
   renderList();
+  updateDashboardStats();
 }
 
 async function fileToDataUrl(file) {
@@ -445,10 +586,27 @@ document.getElementById('reset-products').addEventListener('click', async () => 
   await loadProducts();
 });
 
+// Theme Toggle Click Handler (Admin)
+const themeToggleBtn = document.getElementById('theme-toggle');
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+}
+
 async function init() {
   clearForm();
   await supabaseClient.auth.signOut();
   setAuthUI(null);
+
+  // Theme initialization check
+  const theme = localStorage.getItem('theme');
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark-theme');
+  } else {
+    document.documentElement.classList.remove('dark-theme');
+  }
 }
 
 init();

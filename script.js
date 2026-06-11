@@ -462,12 +462,14 @@ function preloadAllProductSlideImages(slider) {
 
 function getCategoryLabel(category) {
     if (!category) return '';
+    if (category === 'corto') return 'Cortos';
+    if (category === 'largo' || category === 'largos') return 'Largos';
     return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
 function getFixedSubcategories(category) {
     const fixedSubcategories = {
-        pijamas: ['corto', 'largo']
+        pijamas: ['corto', 'largos']
     };
 
     return fixedSubcategories[category] || null;

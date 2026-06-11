@@ -12,6 +12,18 @@
   --transition-smooth: all 0.4s ease;
 }
 
+.dark-theme {
+  --color-primary: #ffb7c5;
+  --color-primary-light: #201a1c;
+  --color-primary-dark: #ffa3b4;
+  --color-secondary: #ffffff;
+  --color-text: #e5d5d8;
+  --color-bg: #120f10;
+  
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-strong: 0 15px 40px rgba(0, 0, 0, 0.7);
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -233,4 +245,430 @@ button.danger { background: #ffe7e7; color: #af3d3d; }
     height: 220px;
   }
   .row-actions { grid-template-columns: 1fr 1fr; }
+}
+
+/* --- Theme Toggle Button --- */
+.theme-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--color-primary-light);
+  transform: scale(1.1);
+}
+
+.theme-toggle-btn svg {
+  transition: transform 0.5s ease;
+}
+
+.theme-toggle-btn:hover svg {
+  transform: rotate(30deg);
+}
+
+/* Toggle visibility of icons depending on theme */
+.dark-theme .moon-icon {
+  display: none;
+}
+
+.dark-theme .sun-icon {
+  display: block !important;
+}
+
+/* --- Dashboard / Stats Styling --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-box {
+  background: #fff8fa;
+  border: 1px solid #fbe3e8;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 12px rgba(255, 183, 197, 0.05);
+  transition: var(--transition-smooth);
+}
+
+.stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 183, 197, 0.15);
+}
+
+.stat-icon {
+  font-size: 2.2rem;
+  background: white;
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(255, 183, 197, 0.1);
+  border: 1px solid #fff0f3;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-top: 2px;
+}
+
+.stats-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.chart-box {
+  background: white;
+  border: 1px solid #fff0f3;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(255, 183, 197, 0.03);
+}
+
+.chart-box h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  border-bottom: 2px solid #fff0f3;
+  padding-bottom: 8px;
+}
+
+.chart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-row-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.chart-row-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.chart-bar-container {
+  background: #ffeef2;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  background: var(--color-primary-dark);
+  height: 100%;
+  border-radius: 5px;
+  width: 0%;
+  transition: width 1s ease-out;
+}
+
+.metrics-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metric-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  background: #fff8fa;
+  border-radius: 10px;
+  border: 1px solid #fff0f3;
+}
+
+.metric-summary-item span {
+  color: #666;
+}
+
+.metric-summary-item strong {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+/* Performance Visualizations */
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.perf-card {
+  background: #fff8fa;
+  border: 1px solid #ffe8ed;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+}
+
+.perf-card h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #777;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.perf-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin: 8px 0 4px;
+}
+
+.perf-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.perf-trend.green {
+  color: #2e7d32;
+}
+
+.perf-trend.neutral {
+  color: #757575;
+}
+
+.bar-chart-visual {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 120px;
+  background: #fff8fa;
+  border: 1px solid #ffeef2;
+  border-radius: 16px;
+  padding: 15px 10px 10px;
+}
+
+.bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  width: 15%;
+  justify-content: flex-end;
+}
+
+.bar-fill {
+  background: var(--color-primary-dark);
+  border-radius: 6px 6px 0 0;
+  width: 100%;
+  min-height: 5px;
+  transition: height 1s ease;
+}
+
+.bar-label {
+  font-size: 0.72rem;
+  color: #999;
+  margin-top: 5px;
+  font-weight: 600;
+}
+
+/* --- Dark Theme Specific Overrides (Admin) --- */
+.dark-theme body {
+  background:
+    radial-gradient(circle at 85% 10%, #2a1b1e 0%, transparent 36%),
+    radial-gradient(circle at 15% 85%, #231719 0%, transparent 34%),
+    var(--color-bg);
+}
+
+.dark-theme .admin-header {
+  background: rgba(18, 15, 16, 0.7);
+  border: 1px solid #332125;
+}
+
+.dark-theme .admin-card {
+  background: #1c1819;
+  border: 1px solid #2d2628;
+}
+
+.dark-theme input, 
+.dark-theme textarea, 
+.dark-theme select {
+  border: 1px solid #44373a;
+  background: #231e20;
+  color: var(--color-text);
+}
+
+.dark-theme input:focus, 
+.dark-theme textarea:focus, 
+.dark-theme select:focus {
+  border-color: var(--color-primary-dark);
+}
+
+.dark-theme button.ghost {
+  background: #2a1c1e;
+  color: var(--color-primary-dark);
+}
+
+.dark-theme button.danger {
+  background: #3d1b1b;
+  color: #ffa1a1;
+}
+
+.dark-theme .row {
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .row-actions .delete {
+  background: #3d1b1b;
+  color: #ffa1a1;
+}
+
+.dark-theme .preview-item {
+  border: 1px solid #3d2c30;
+}
+
+/* Dashboard Dark Theme Overrides */
+.dark-theme .stat-box {
+  background: #1c1819;
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .stat-icon {
+  background: #231e20;
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .chart-box {
+  background: #1c1819;
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .chart-box h3 {
+  border-bottom: 2px solid #3d2c30;
+}
+
+.dark-theme .chart-bar-container {
+  background: #3d2c30;
+}
+
+.dark-theme .metric-summary-item {
+  background: #231e20;
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .metric-summary-item span {
+  color: #aaa;
+}
+
+.dark-theme .perf-card {
+  background: #1c1819;
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .perf-card h4 {
+  color: #999;
+}
+
+.dark-theme .bar-chart-visual {
+  background: #1c1819;
+  border: 1px solid #3d2c30;
+}
+
+.dark-theme .perf-trend.green {
+  color: #81c784;
+}
+
+.dark-theme .perf-trend.neutral {
+  color: #b0bec5;
+}
+
+.dark-theme .performance-section {
+  border-top: 1px solid #3d2c30 !important;
+}
+
+/* --- Admin Tabs Styling --- */
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid #ffe5ec;
+  background: white;
+  color: #777;
+  cursor: pointer;
+  font-weight: 700;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-soft);
+}
+
+.tab-btn:hover {
+  background: #fff8fa;
+  color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.tab-btn.active {
+  background: var(--color-primary-dark);
+  color: white;
+  border-color: var(--color-primary-dark);
+}
+
+/* Dark theme tab buttons overrides */
+.dark-theme .tab-btn {
+  background: #1c1819;
+  border-color: #2d2628;
+  color: var(--color-text);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .tab-btn:hover {
+  background: #231e20;
+  color: var(--color-primary-dark);
+}
+
+.dark-theme .tab-btn.active {
+  background: var(--color-primary-dark);
+  color: #120f10;
+  border-color: var(--color-primary-dark);
 }
