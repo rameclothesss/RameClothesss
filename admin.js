@@ -565,18 +565,74 @@ function initDragAndDrop() {
   if (!rows.length) return;
 
   let dragSrc = null;
-  let touchDragging = false;
   let ghost = null;
-  let touchOffsetX = 0;
-  let touchOffsetY = 0;
+  let offsetX = 0;
+  let offsetY = 0;
   let lastTarget = null;
 
-  // ---- Desktop drag events ----
+  // ---- Shared reorder helper ----
+  async function doReorder(srcId, dstId) {
+    const srcIndex = products.findIndex(p => p.id === srcId);
+    const dstIndex = products.findIndex(p => p.id === dstId);
+    if (srcIndex === -1 || dstIndex === -1) return;
+    const [moved] = products.splice(srcIndex, 1);
+    products.splice(dstIndex, 0, moved);
+    renderList();
+    showSaveOrderIndicator();
+    await saveSortOrder();
+    hideSaveOrderIndicator();
+  }
+
+  // ---- Document-level touch handlers ----
+  // Attached to document so the browser can't intercept with scroll
+  function onTouchMove(e) {
+    if (!ghost || !dragSrc) return;
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    ghost.style.top  = (touch.clientY - offsetY) + 'px';
+    ghost.style.left = (touch.clientX - offsetX) + 'px';
+
+    // Temporarily hide ghost to hit-test what's underneath
+    ghost.style.display = 'none';
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    ghost.style.display = '';
+
+    const targetRow = el ? el.closest('.row[draggable="true"]') : null;
+    productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
+    if (targetRow && targetRow !== dragSrc) {
+      targetRow.classList.add('drag-over');
+      lastTarget = targetRow;
+    }
+  }
+
+  async function onTouchEnd() {
+    if (!dragSrc) return;
+
+    // Cleanup
+    if (ghost) { ghost.remove(); ghost = null; }
+    dragSrc.classList.remove('dragging');
+    productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+
+    const src    = dragSrc;
+    const target = lastTarget;
+    dragSrc    = null;
+    lastTarget = null;
+
+    if (target && target !== src) {
+      await doReorder(Number(src.dataset.id), Number(target.dataset.id));
+    }
+  }
+
+  // ---- Per-row events (desktop + mobile in one loop) ----
   rows.forEach((row) => {
     const handle = row.querySelector('.drag-handle');
 
-    handle.addEventListener('mousedown', () => { row.draggable = true; });
-
+    // --- Desktop drag ---
     row.addEventListener('dragstart', (e) => {
       dragSrc = row;
       row.classList.add('dragging');
@@ -602,112 +658,53 @@ function initDragAndDrop() {
       e.preventDefault();
       if (!dragSrc || dragSrc === row) return;
       row.classList.remove('drag-over');
-
-      const srcId = Number(dragSrc.dataset.id);
-      const dstId = Number(row.dataset.id);
-
-      const srcIndex = products.findIndex(p => p.id === srcId);
-      const dstIndex = products.findIndex(p => p.id === dstId);
-      if (srcIndex === -1 || dstIndex === -1) return;
-
-      // Reorder in-memory
-      const [moved] = products.splice(srcIndex, 1);
-      products.splice(dstIndex, 0, moved);
-
-      renderList();
-      showSaveOrderIndicator();
-      await saveSortOrder();
-      hideSaveOrderIndicator();
+      await doReorder(Number(dragSrc.dataset.id), Number(row.dataset.id));
     });
-  });
 
-  // ---- Touch drag events (mobile) ----
-  rows.forEach((row) => {
-    const handle = row.querySelector('.drag-handle');
-
+    // --- Mobile touch (touchstart on handle → move/end on document) ---
     handle.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      touchDragging = true;
-      dragSrc = row;
+      e.preventDefault(); // Stops browser from claiming this touch as page scroll
+
+      dragSrc    = row;
       lastTarget = null;
 
       const touch = e.touches[0];
-      const rect = row.getBoundingClientRect();
-      const handleRect = handle.getBoundingClientRect();
-      // Offset from center of handle so the ghost follows the finger naturally
-      touchOffsetX = touch.clientX - handleRect.left - handleRect.width / 2 + (handleRect.left - rect.left);
-      touchOffsetY = touch.clientY - handleRect.top - handleRect.height / 2 + (handleRect.top - rect.top);
+      const rect  = row.getBoundingClientRect();
+      offsetX = touch.clientX - rect.left;
+      offsetY = touch.clientY - rect.top;
 
-      // Create ghost clone
+      // Clone row as floating ghost
       ghost = row.cloneNode(true);
       ghost.id = 'drag-ghost';
-      ghost.style.cssText = `
-        position: fixed;
-        top: ${rect.top}px;
-        left: ${rect.left}px;
-        width: ${rect.width}px;
-        pointer-events: none;
-        opacity: 0.88;
-        z-index: 9999;
-        border-radius: 14px;
-        box-shadow: 0 14px 40px rgba(0,0,0,0.28);
-        transform: scale(1.03);
-        background: var(--color-bg, #fff);
-      `;
+      Object.assign(ghost.style, {
+        position:      'fixed',
+        top:           rect.top  + 'px',
+        left:          rect.left + 'px',
+        width:         rect.width + 'px',
+        margin:        '0',
+        pointerEvents: 'none',
+        opacity:       '0.92',
+        zIndex:        '9999',
+        borderRadius:  '14px',
+        boxShadow:     '0 16px 44px rgba(0,0,0,0.32)',
+        transform:     'scale(1.03)',
+        transition:    'none',
+      });
       document.body.appendChild(ghost);
       row.classList.add('dragging');
-    }, { passive: false });
 
-    handle.addEventListener('touchmove', (e) => {
-      if (!touchDragging || !ghost) return;
-      e.preventDefault();
+      // Lock page scroll while dragging so browser doesn't steal the touch
+      document.body.style.overflow    = 'hidden';
+      document.body.style.touchAction = 'none';
 
-      const touch = e.touches[0];
-      ghost.style.top = `${touch.clientY - touchOffsetY}px`;
-      ghost.style.left = `${touch.clientX - touchOffsetX}px`;
-
-      // Find element under touch (excluding ghost)
-      ghost.style.display = 'none';
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      ghost.style.display = '';
-
-      const targetRow = el ? el.closest('.row[draggable="true"]') : null;
-      if (targetRow && targetRow !== dragSrc) {
-        productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
-        targetRow.classList.add('drag-over');
-        lastTarget = targetRow;
-      }
-    }, { passive: false });
-
-    handle.addEventListener('touchend', async (e) => {
-      if (!touchDragging) return;
-      touchDragging = false;
-
-      if (ghost) { ghost.remove(); ghost = null; }
-      dragSrc.classList.remove('dragging');
-      productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
-
-      if (lastTarget && lastTarget !== dragSrc) {
-        const srcId = Number(dragSrc.dataset.id);
-        const dstId = Number(lastTarget.dataset.id);
-        const srcIndex = products.findIndex(p => p.id === srcId);
-        const dstIndex = products.findIndex(p => p.id === dstId);
-
-        if (srcIndex !== -1 && dstIndex !== -1) {
-          const [moved] = products.splice(srcIndex, 1);
-          products.splice(dstIndex, 0, moved);
-          renderList();
-          showSaveOrderIndicator();
-          await saveSortOrder();
-          hideSaveOrderIndicator();
-        }
-      }
-
-      dragSrc = null;
-      lastTarget = null;
+      // Attach move/end to DOCUMENT — fires even when finger leaves the handle
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      document.addEventListener('touchend',  onTouchEnd,  { passive: false });
     }, { passive: false });
   });
 }
+
+
 
 function showSaveOrderIndicator() {
   let indicator = document.getElementById('save-order-indicator');
