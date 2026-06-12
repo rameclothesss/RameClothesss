@@ -212,12 +212,117 @@ button.danger { background: #ffe7e7; color: #af3d3d; }
 
 .product-list { display: grid; gap: 10px; }
 
+/* ---- Drag & Drop Reorder ---- */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--color-primary-dark);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-primary-light);
+  border: 1px solid #f4dbe2;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.drag-handle:hover {
+  background: #fce9ee;
+  transform: scale(1.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+.drag-handle--disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.row.dragging {
+  opacity: 0.4;
+  border: 2px dashed var(--color-primary-dark);
+  background: var(--color-primary-light);
+}
+
+.row.drag-over {
+  border: 2px solid var(--color-primary-dark);
+  box-shadow: 0 0 0 3px rgba(204, 139, 152, 0.25);
+  transform: scale(1.01);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.drag-hint {
+  font-size: 0.82rem;
+  color: #999;
+  text-align: center;
+  padding: 8px 12px;
+  margin: 0 0 4px;
+  border-radius: 10px;
+  background: #fff8fa;
+  border: 1px dashed #f4dbe2;
+}
+
+/* Toast indicator */
+.save-order-indicator {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #1a1a1a;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  z-index: 10000;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.save-order-indicator.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Dark theme overrides */
+.dark-theme .drag-handle {
+  background: #231e20;
+  border-color: #3d2c30;
+  color: var(--color-primary);
+}
+
+.dark-theme .drag-handle:hover {
+  background: #2d2022;
+}
+
+.dark-theme .drag-hint {
+  background: #1c1819;
+  border-color: #3d2c30;
+  color: #888;
+}
+
+.dark-theme .save-order-indicator {
+  background: #2d2022;
+  border: 1px solid #3d2c30;
+}
+
 .row {
   border: 1px solid #f4dbe2;
   border-radius: 14px;
   padding: 10px;
   display: grid;
-  grid-template-columns: 92px 1fr auto;
+  grid-template-columns: 36px 92px 1fr auto;
   gap: 12px;
   align-items: center;
 }
@@ -239,9 +344,20 @@ button.danger { background: #ffe7e7; color: #af3d3d; }
   .grid-2, .toolbar { grid-template-columns: 1fr; }
   .row {
     grid-template-columns: 1fr;
-    padding: 15px;
+    padding: 15px 15px 15px 48px;
     gap: 12px;
     text-align: center;
+    position: relative;
+  }
+  .drag-handle {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 52px;
+    border-radius: 8px;
+    font-size: 1.3rem;
   }
   .row img {
     width: 120px;

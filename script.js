@@ -898,7 +898,7 @@ async function loadProductsFromSupabase() {
     if (!supabaseLib?.createClient) return;
 
     const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
+    const { data, error } = await supabaseClient.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
     if (error) {
         console.warn('Supabase load error:', error.message);
         return;

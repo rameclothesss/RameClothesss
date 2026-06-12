@@ -94,7 +94,8 @@ function mapRowToProduct(row) {
     subCategory: row.sub_category || '',
     badge: row.badge || '',
     sizes: row.sizes || [],
-    images: row.images || []
+    images: row.images || [],
+    sortOrder: row.sort_order != null ? Number(row.sort_order) : row.id
   };
 }
 
@@ -109,6 +110,13 @@ function toDbPayload(product) {
     sizes: product.sizes,
     images: product.images
   };
+}
+
+async function saveSortOrder() {
+  const updates = products.map((p, index) =>
+    supabaseClient.from('products').update({ sort_order: index }).eq('id', p.id)
+  );
+  await Promise.all(updates);
 }
 
 function switchTab(tabName) {
@@ -206,19 +214,42 @@ function filteredProducts() {
     price_desc: (a, b) => b.price - a.price
   };
 
-  result.sort(sorters[sort] || sorters.newest);
+  if (sorters[sort]) {
+    result.sort(sorters[sort]);
+  }
+  // If sort === 'default', keep the existing order from Supabase (sort_order)
   return result;
 }
 
 function renderList() {
+  const isFiltered = searchProducts.value.trim() || filterCategory.value !== 'all' || sortProducts.value !== 'default';
   const visible = filteredProducts();
   count.textContent = `${visible.length} / ${products.length} producto(s)`;
   productList.innerHTML = '';
 
+  // Show/hide drag hint based on whether we can actually reorder
+  let dragHint = document.getElementById('drag-order-hint');
+  if (!dragHint) {
+    dragHint = document.createElement('p');
+    dragHint.id = 'drag-order-hint';
+    dragHint.className = 'drag-hint';
+    productList.before(dragHint);
+  }
+  if (!isFiltered) {
+    dragHint.textContent = '✋ Arrastrá desde el ícono ≡ para cambiar el orden. El orden se guarda automáticamente.';
+    dragHint.style.display = 'block';
+  } else {
+    dragHint.textContent = '⚠️ Desactivá filtros y ordenamiento para poder reordenar.';
+    dragHint.style.display = 'block';
+  }
+
   visible.forEach((product) => {
     const row = document.createElement('article');
     row.className = 'row';
+    row.dataset.id = product.id;
+    row.draggable = !isFiltered;
     row.innerHTML = `
+      <div class="drag-handle${isFiltered ? ' drag-handle--disabled' : ''}" title="Arrastrar para reordenar">≡</div>
       <img src="${product.images?.[0] || ''}" alt="${product.name}">
       <div>
         <h3>#${product.id} - ${product.name}</h3>
@@ -235,6 +266,10 @@ function renderList() {
     `;
     productList.appendChild(row);
   });
+
+  if (!isFiltered) {
+    initDragAndDrop();
+  }
 }
 
 function updateDashboardStats() {
@@ -345,7 +380,7 @@ function updateDashboardStats() {
 }
 
 async function loadProducts() {
-  const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
+  const { data, error } = await supabaseClient.from('products').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
   if (error) {
     alert(`No se pudieron cargar productos: ${error.message}`);
     return;
@@ -521,6 +556,177 @@ cancelBtn.addEventListener('click', clearForm);
 searchProducts.addEventListener('input', renderList);
 filterCategory.addEventListener('change', renderList);
 sortProducts.addEventListener('change', renderList);
+
+// ============================================================
+// DRAG & DROP REORDER (desktop + mobile touch)
+// ============================================================
+function initDragAndDrop() {
+  const rows = Array.from(productList.querySelectorAll('.row[draggable="true"]'));
+  if (!rows.length) return;
+
+  let dragSrc = null;
+  let touchDragging = false;
+  let ghost = null;
+  let touchOffsetX = 0;
+  let touchOffsetY = 0;
+  let lastTarget = null;
+
+  // ---- Desktop drag events ----
+  rows.forEach((row) => {
+    const handle = row.querySelector('.drag-handle');
+
+    handle.addEventListener('mousedown', () => { row.draggable = true; });
+
+    row.addEventListener('dragstart', (e) => {
+      dragSrc = row;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', row.dataset.id);
+    });
+
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
+      dragSrc = null;
+    });
+
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      e.dataTransfer.dropEffect = 'move';
+      productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      row.classList.remove('drag-over');
+
+      const srcId = Number(dragSrc.dataset.id);
+      const dstId = Number(row.dataset.id);
+
+      const srcIndex = products.findIndex(p => p.id === srcId);
+      const dstIndex = products.findIndex(p => p.id === dstId);
+      if (srcIndex === -1 || dstIndex === -1) return;
+
+      // Reorder in-memory
+      const [moved] = products.splice(srcIndex, 1);
+      products.splice(dstIndex, 0, moved);
+
+      renderList();
+      showSaveOrderIndicator();
+      await saveSortOrder();
+      hideSaveOrderIndicator();
+    });
+  });
+
+  // ---- Touch drag events (mobile) ----
+  rows.forEach((row) => {
+    const handle = row.querySelector('.drag-handle');
+
+    handle.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      touchDragging = true;
+      dragSrc = row;
+      lastTarget = null;
+
+      const touch = e.touches[0];
+      const rect = row.getBoundingClientRect();
+      const handleRect = handle.getBoundingClientRect();
+      // Offset from center of handle so the ghost follows the finger naturally
+      touchOffsetX = touch.clientX - handleRect.left - handleRect.width / 2 + (handleRect.left - rect.left);
+      touchOffsetY = touch.clientY - handleRect.top - handleRect.height / 2 + (handleRect.top - rect.top);
+
+      // Create ghost clone
+      ghost = row.cloneNode(true);
+      ghost.id = 'drag-ghost';
+      ghost.style.cssText = `
+        position: fixed;
+        top: ${rect.top}px;
+        left: ${rect.left}px;
+        width: ${rect.width}px;
+        pointer-events: none;
+        opacity: 0.88;
+        z-index: 9999;
+        border-radius: 14px;
+        box-shadow: 0 14px 40px rgba(0,0,0,0.28);
+        transform: scale(1.03);
+        background: var(--color-bg, #fff);
+      `;
+      document.body.appendChild(ghost);
+      row.classList.add('dragging');
+    }, { passive: false });
+
+    handle.addEventListener('touchmove', (e) => {
+      if (!touchDragging || !ghost) return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      ghost.style.top = `${touch.clientY - touchOffsetY}px`;
+      ghost.style.left = `${touch.clientX - touchOffsetX}px`;
+
+      // Find element under touch (excluding ghost)
+      ghost.style.display = 'none';
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      ghost.style.display = '';
+
+      const targetRow = el ? el.closest('.row[draggable="true"]') : null;
+      if (targetRow && targetRow !== dragSrc) {
+        productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
+        targetRow.classList.add('drag-over');
+        lastTarget = targetRow;
+      }
+    }, { passive: false });
+
+    handle.addEventListener('touchend', async (e) => {
+      if (!touchDragging) return;
+      touchDragging = false;
+
+      if (ghost) { ghost.remove(); ghost = null; }
+      dragSrc.classList.remove('dragging');
+      productList.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over'));
+
+      if (lastTarget && lastTarget !== dragSrc) {
+        const srcId = Number(dragSrc.dataset.id);
+        const dstId = Number(lastTarget.dataset.id);
+        const srcIndex = products.findIndex(p => p.id === srcId);
+        const dstIndex = products.findIndex(p => p.id === dstId);
+
+        if (srcIndex !== -1 && dstIndex !== -1) {
+          const [moved] = products.splice(srcIndex, 1);
+          products.splice(dstIndex, 0, moved);
+          renderList();
+          showSaveOrderIndicator();
+          await saveSortOrder();
+          hideSaveOrderIndicator();
+        }
+      }
+
+      dragSrc = null;
+      lastTarget = null;
+    }, { passive: false });
+  });
+}
+
+function showSaveOrderIndicator() {
+  let indicator = document.getElementById('save-order-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'save-order-indicator';
+    indicator.className = 'save-order-indicator';
+    document.body.appendChild(indicator);
+  }
+  indicator.textContent = '💾 Guardando orden...';
+  indicator.classList.add('visible');
+}
+
+function hideSaveOrderIndicator() {
+  const indicator = document.getElementById('save-order-indicator');
+  if (!indicator) return;
+  indicator.textContent = '✅ Orden guardado';
+  setTimeout(() => indicator.classList.remove('visible'), 1800);
+}
 
 document.getElementById('import-local-products').addEventListener('click', async () => {
   const local = JSON.parse(localStorage.getItem('rame_products') || '[]');
